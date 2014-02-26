@@ -1,52 +1,52 @@
 ``multidb`` provides two Django database routers useful in master-slave
 deployments:
 
- * ``multidb.MasterSlaveRouter`` simply sends all read queries to a
-   slave database; and all inserts, updates, and deletes to the
-   ``default`` database. Use it like this::
+* ``multidb.MasterSlaveRouter`` simply sends all read queries to a
+  slave database; and all inserts, updates, and deletes to the
+  ``default`` database. Use it like this::
 
-      DATABASES = {
-          'default': {...},
-          'shadow-1': {...},
-          'shadow-2': {...},
-      }
-      SLAVE_DATABASES = ['shadow-1', 'shadow-2']
-      DATABASE_ROUTERS = ('multidb.MasterSlaveRouter',)
+     DATABASES = {
+         'default': {...},
+         'shadow-1': {...},
+         'shadow-2': {...},
+     }
+     SLAVE_DATABASES = ['shadow-1', 'shadow-2']
+     DATABASE_ROUTERS = ('multidb.MasterSlaveRouter',)
 
-   The slave databases are chosen in round-robin fashion.
+  The slave databases are chosen in round-robin fashion.
 
- * ``multidb.PinningMasterSlaveRouter`` distinguishes HTTP requests
-   into ones that are "pinned to the write db" and those that are not
-   pinned. A request is pinned either if it is likely to write to the
-   database (most usually this means a POST request), or if a short
-   while ago there was a request by the same user that may have
-   written to the database (this is in order to account for
-   replication lags). Pinned requests use the ``default`` database for
-   reading; otherwise they use the slaves in round-robin fashion.
+* ``multidb.PinningMasterSlaveRouter`` distinguishes HTTP requests
+  into ones that are "pinned to the write db" and those that are not
+  pinned. A request is pinned either if it is likely to write to the
+  database (most usually this means a POST request), or if a short
+  while ago there was a request by the same user that may have
+  written to the database (this is in order to account for
+  replication lags). Pinned requests use the ``default`` database for
+  reading; otherwise they use the slaves in round-robin fashion.
 
-   This is an example configuration; but see the configuration
-   reference below for details::
+  This is an example configuration; but see the configuration
+  reference below for details::
 
-      DATABASES = {
-          'default': {...},
-          'shadow-1': {...},
-          'shadow-2': {...},
-      }
-      SLAVE_DATABASES = ['shadow-1', 'shadow-2']
-      DATABASE_ROUTERS = ('multidb.PinningMasterSlaveRouter',)
+     DATABASES = {
+         'default': {...},
+         'shadow-1': {...},
+         'shadow-2': {...},
+     }
+     SLAVE_DATABASES = ['shadow-1', 'shadow-2']
+     DATABASE_ROUTERS = ('multidb.PinningMasterSlaveRouter',)
 
-      # PinningMasterSlaveRouter must always be used in
-      # combination with PinningRouterMiddleware, which must
-      # always be listed first in MIDDLEWARE_CLASSES
-      MIDDLEWARE_CLASSES = (
-          'multidb.middleware.PinningRouterMiddleware',
-          ...more middleware here...
-      )
+     # PinningMasterSlaveRouter must always be used in
+     # combination with PinningRouterMiddleware, which must
+     # always be listed first in MIDDLEWARE_CLASSES
+     MIDDLEWARE_CLASSES = (
+         'multidb.middleware.PinningRouterMiddleware',
+         ...more middleware here...
+     )
 
-      MULTIDB_PINNING_VIEWS = ('django.contrib.syndication.views.Feed',
-                               'myapp.core.views.myview')
-      MULTIDB_PINNING_SECONDS = 5
-      MULTIDB_PINNING_COOKIE = 'multidb_pin_writes'
+     MULTIDB_PINNING_VIEWS = ('django.contrib.syndication.views.Feed',
+                              'myapp.core.views.myview')
+     MULTIDB_PINNING_SECONDS = 5
+     MULTIDB_PINNING_COOKIE = 'multidb_pin_writes'
 
 Configuration parameters
 ========================
