@@ -13,7 +13,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    test_requires=['Fabric', 'django-nose'],
+    test_requires=['django-nose'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

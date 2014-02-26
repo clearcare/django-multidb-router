@@ -1,6 +1,3 @@
-"""An encapsulated thread-local variable that indicates whether future DB
-writes should be "stuck" to the master."""
-
 from functools import wraps
 import threading
 
@@ -32,7 +29,6 @@ def unpin_this_thread():
     """Unmark this thread as "stuck" to the master for all DB access.
 
     If the thread wasn't marked, do nothing.
-
     """
     _locals.pinned = False
 
@@ -53,9 +49,8 @@ def this_thread_has_db_write_set():
 
 def set_db_write_for_this_thread_if_needed(request, view_func=False):
     """Check whether this thread should be assumed to be writing to
-    the database, and if yes set a flag.  The thread is db_write if
-    it's a POST or if the view is listed in MULTIDB_PINNING_VIEWS.
-    (This function never unsets db_write if it's already set.)
+    the database, and if yes set a flag.  (This function never unsets
+    db_write if it's already set.)
     """
     if this_thread_has_db_write_set():
         # We have already set the db_write flag in a previous call

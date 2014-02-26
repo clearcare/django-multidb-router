@@ -1,9 +1,9 @@
 from django.conf import settings
 
-from .pinning import pin_this_thread, unpin_this_thread, \
-                     set_db_write_for_this_thread_if_needed, \
-                     this_thread_has_db_write_set, \
-                     unset_db_write_for_this_thread
+from .pinning import (pin_this_thread, unpin_this_thread,
+                      set_db_write_for_this_thread_if_needed,
+                      this_thread_has_db_write_set,
+                      unset_db_write_for_this_thread)
 
 
 # The name of the cookie that directs a request's reads to the master DB
@@ -20,16 +20,6 @@ READ_ONLY_METHODS = ('GET', 'TRACE', 'HEAD', 'OPTIONS')
 
 
 class PinningRouterMiddleware(object):
-    """Middleware to support the PinningMasterSlaveRouter
-
-    If the request is a POST or is listed in MULTIDB_PINNING_VIEWS, it
-    pins it to the master; it also attaches a cookie to a user agent
-    who has just written, causing subsequent DB reads (for some period
-    of time, hopefully exceeding replication lag) to be handled by the
-    master.
-
-    When the cookie is detected on a request, it pins to the master.
-    """
     def process_request(self, request):
         """Set the thread's pinning flag according to the presence of the
         incoming cookie."""
