@@ -1,7 +1,7 @@
 from functools import wraps
 import threading
 
-from django.conf import settings
+from multidb.conf import settings
 
 
 __all__ = ['this_thread_is_pinned', 'pin_this_thread', 'unpin_this_thread',
@@ -68,7 +68,7 @@ def set_db_write_for_this_thread_if_needed(request, view_func=False):
         # like django.contrib.syndication.views.Feed().
         name = view_func.__class__.__name__
     view_name = module + '.' + name
-    if view_name in getattr(settings, 'MULTIDB_PINNING_VIEWS', ()):
+    if view_name in settings.MULTIDB_PINNING_VIEWS:
         set_db_write_for_this_thread()
         return
 

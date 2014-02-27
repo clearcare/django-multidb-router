@@ -6,8 +6,8 @@ from nose.tools import eq_
 
 from multidb import (DEFAULT_DB_ALIAS, MasterSlaveRouter,
                      PinningMasterSlaveRouter, get_slave)
-from multidb.middleware import (PINNING_COOKIE, PINNING_SECONDS,
-                                PinningRouterMiddleware)
+from multidb.conf import settings
+from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
                              unpin_this_thread, use_master, db_write)
 
@@ -35,18 +35,6 @@ class MasterSlaveRouterTests(TestCase):
         router = MasterSlaveRouter()
         assert router.allow_syncdb(DEFAULT_DB_ALIAS, None)
         assert not router.allow_syncdb(get_slave(), None)
-
-
-class SettingsTests(TestCase):
-    """Tests for settings defaults"""
-
-    def test_cookie_default(self):
-        """Check that the cookie name has the right default."""
-        eq_(PINNING_COOKIE, 'multidb_pin_writes')
-
-    def test_pinning_seconds_default(self):
-        """Make sure the cookie age has the right default."""
-        eq_(PINNING_SECONDS, 15)
 
 
 class PinningTests(UnpinningTestCase):
@@ -106,7 +94,8 @@ class MiddlewareTests(UnpinningTestCase):
 
     def test_pin_on_cookie(self):
         """Thread should pin when the cookie is set."""
-        self.request.COOKIES[PINNING_COOKIE] = 'y'
+
+        self.request.COOKIES[settings.MULTIDB_PINNING_COOKIE] = 'y'
         self.middleware.process_request(self.request)
         assert this_thread_is_pinned()
 
@@ -129,22 +118,22 @@ class MiddlewareTests(UnpinningTestCase):
         self.middleware.process_request(self.request)
         response = self.middleware.process_response(self.request,
                                                     HttpResponse())
-        assert PINNING_COOKIE not in response.cookies
+        assert settings.MULTIDB_PINNING_COOKIE not in response.cookies
 
         self.request.method = 'POST'
         self.middleware.process_request(self.request)
         response = self.middleware.process_response(self.request,
                                                     HttpResponse())
-        assert PINNING_COOKIE in response.cookies
-        eq_(response.cookies[PINNING_COOKIE]['max-age'],
-            PINNING_SECONDS)
+        assert settings.MULTIDB_PINNING_COOKIE in response.cookies
+        eq_(response.cookies[settings.MULTIDB_PINNING_COOKIE]['max-age'],
+            settings.MULTIDB_PINNING_SECONDS)
 
     def test_attribute(self):
         """The cookie should get set if the _db_write attribute is True."""
         res = HttpResponse()
         res._db_write = True
         response = self.middleware.process_response(self.request, res)
-        assert PINNING_COOKIE in response.cookies
+        assert settings.MULTIDB_PINNING_COOKIE in response.cookies
 
     def test_db_write_decorator(self):
         """The @db_write decorator should make any view set the cookie."""
@@ -154,13 +143,13 @@ class MiddlewareTests(UnpinningTestCase):
         def view(req):
             return HttpResponse()
         response = self.middleware.process_response(req, view(req))
-        assert PINNING_COOKIE not in response.cookies
+        assert settings.MULTIDB_PINNING_COOKIE not in response.cookies
 
         @db_write
         def write_view(req):
             return HttpResponse()
         response = self.middleware.process_response(req, write_view(req))
-        assert PINNING_COOKIE in response.cookies
+        assert settings.MULTIDB_PINNING_COOKIE in response.cookies
 
     def test_multidb_pinning_views_setting(self):
         middleware = ('multidb.middleware.PinningRouterMiddleware',)
@@ -174,29 +163,29 @@ class MiddlewareTests(UnpinningTestCase):
             c = Client()
             response = c.get('/dummy/')
             self.assertEquals(response.content, "pinned")
-            self.assertTrue(PINNING_COOKIE in response.cookies)
+            self.assertTrue(settings.MULTIDB_PINNING_COOKIE in response.cookies)
             c = Client()
             response = c.get('/cdummy/')
             self.assertEquals(response.content, "pinned")
-            self.assertTrue(PINNING_COOKIE in response.cookies)
+            self.assertTrue(settings.MULTIDB_PINNING_COOKIE in response.cookies)
             c = Client()
             response = c.get('/odummy/')
             self.assertEquals(response.content, "pinned")
-            self.assertTrue(PINNING_COOKIE in response.cookies)
+            self.assertTrue(settings.MULTIDB_PINNING_COOKIE in response.cookies)
         with self.settings(MIDDLEWARE_CLASSES=middleware,
                            MULTIDB_PINNING_VIEWS=()):
             c = Client()
             response = c.get('/dummy/')
             self.assertEquals(response.content, "not pinned")
-            self.assertFalse(PINNING_COOKIE in response.cookies)
+            self.assertFalse(settings.MULTIDB_PINNING_COOKIE in response.cookies)
             c = Client()
             response = c.get('/cdummy/')
             self.assertEquals(response.content, "not pinned")
-            self.assertFalse(PINNING_COOKIE in response.cookies)
+            self.assertFalse(settings.MULTIDB_PINNING_COOKIE in response.cookies)
             c = Client()
             response = c.get('/odummy/')
             self.assertEquals(response.content, "not pinned")
-            self.assertFalse(PINNING_COOKIE in response.cookies)
+            self.assertFalse(settings.MULTIDB_PINNING_COOKIE in response.cookies)
 
 
 class ContextDecoratorTests(TestCase):
