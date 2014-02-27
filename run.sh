@@ -13,7 +13,8 @@ usage() {
 
 case "$1" in
     "test" )
-        django-admin.py test multidb ;;
+        shift;
+        django-admin.py test "$@" ;;
     "shell" )
         django-admin.py shell ;;
     "check" )

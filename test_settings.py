@@ -2,9 +2,11 @@
 
 SECRET_KEY = 'dummy'
 ROOT_URLCONF = 'multidb.tests'
-TEST_RUNNER = 'django_nose.runner.NoseTestSuiteRunner'
 
-# The default database should point to the master.
+INSTALLED_APPS = (
+    'multidb',
+)
+
 DATABASES = {
     'default': {
         'NAME': 'master',
@@ -16,10 +18,10 @@ DATABASES = {
     },
 }
 
-# Put the aliases for slave databases in this list.
 SLAVE_DATABASES = ['slave']
 
-# If you use PinningMasterSlaveRouter and its associated middleware, you can
-# customize the cookie name and its lifetime like so:
-# MULTIDB_PINNING_COOKIE = 'multidb_pin_writes"
-# MULTIDB_PINNING_SECONDS = 15
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}

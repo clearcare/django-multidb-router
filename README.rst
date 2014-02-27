@@ -78,7 +78,49 @@ MULTIDB_PINNING_VIEWS
    ``PinningRouterMiddleware`` assumes that requests with HTTP methods
    that are not ``GET``, ``TRACE``, ``HEAD``, or ``OPTIONS`` are
    always writes; therefore you don't need to specify those in
-   ``MULTIDB_PINNING_VIEWS``.
+   ``MULTIDB_PINNING_VIEWS``. In fact, if your application follows the
+   standard recommendation that ``GET`` should not have side effects,
+   then, in theory, everything should work correctly without
+   specifying ``MULTIDB_PINNING_VIEWS``. In practice things don't
+   always work out like this, but needing to specify stuff in
+   ``MULTIDB_PINNING_VIEWS`` should be an exception.
+
+MULTIDB_COOKIELESS_CACHE
+   Pinning normally works with a cookie. By specifying
+   ``MULTIDB_COOKIELESS_CACHE``, you can make pinning work for
+   cookieless users as well. This works by saving state information in
+   the cache instead of at a cookie; this information includes the
+   client fingerprint (a hash of the client's IP address, User-Agent,
+   and some other HTTP headers).
+
+   ``MULTIDB_COOKIELESS_CACHE`` is a key from ``CACHES``. That cache
+   will be used for storing state information for cookieless users;
+   the default is to not this, meaning there will be no pinning for
+   cookieless users.
+
+   If you specify ``MULTIDB_COOKIELESS_CACHE``, make sure the cache
+   specified is shared among all servers; if one request by the user
+   goes to server A and the next by the same user goes to B, A and B
+   must be using the same cache; storing state information on a local
+   cache will fail.
+
+MULTIDB_COOKIELESS_COOKIE
+   When ``MULTIDB_COOKIELESS_CACHE`` is set to a non-empty value,
+   ``django-multidb-router`` uses an additional cookie in order to
+   check whether a user is cookieless. The first time a user visits he
+   sends no cookies, so ``django-multidb-router`` will check the
+   cache and will not find any information there. A first time visit
+   is normally not a write, so ``django-multidb-router`` will not need
+   to pin the user (but even if it does so in the cache, it's no big
+   deal). When responding to this first time visit, it will set a
+   cookie that expires at the end of the brower session. When, in
+   subsequent requests, ``django-multidb-router`` receives that
+   cookie, it knows that the user uses cookies and will therefore not
+   make any attempt to get state information from the cache, as it is
+   less reliable.
+
+   ``MULTIDB_COOKIELESS_COOKIE`` can be used to change the name of the
+   cookie. The default is "multidb_use_cookies".
 
 API
 ===
@@ -123,7 +165,6 @@ or as a decorator::
 Running the Tests
 =================
 
-To run the tests, you need to install the development requirements::
+::
 
-    pip install -r requirements/development.txt
     ./run.sh test
