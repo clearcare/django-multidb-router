@@ -95,6 +95,30 @@ class UseMaster(object):
 use_master = UseMaster()
 
 
+class UseSlave(object):
+    """A contextmanager/decorator to use the slave database."""
+    "Use this in cases where the usual behavior would be to pin to master,"
+    "such as when the request method is POST, but you know you're not doing any writing."
+    old = False
+
+    def __call__(self, func):
+        @wraps(func)
+        def decorator(*args, **kw):
+            with self:
+                return func(*args, **kw)
+        return decorator
+
+    def __enter__(self):
+        self.old = this_thread_has_db_write_set()
+        unset_db_write_for_this_thread()
+
+    def __exit__(self, type, value, tb):
+        if self.old:
+            set_db_write_for_this_thread()
+
+use_slave = UseSlave()
+
+
 def mark_as_write(response):
     """Mark a response as having done a DB write."""
     response._db_write = True
