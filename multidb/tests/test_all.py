@@ -11,7 +11,7 @@ from multidb import (DEFAULT_DB_ALIAS, MasterSlaveRouter,
 from multidb.conf import settings
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
-                             unpin_this_thread, use_master, db_write)
+                             unpin_this_thread, use_master, use_slave, db_write)
 
 
 def expire_cookies(cookies):
@@ -327,3 +327,48 @@ class ContextDecoratorTests(TestCase):
                 self.assertTrue(this_thread_is_pinned())
                 raise ValueError
         self.assertFalse(this_thread_is_pinned())
+
+    def test_slave_decorator(self):
+
+        @use_slave
+        def check():
+            self.assertFalse(this_thread_is_pinned())
+
+        pin_this_thread()
+        self.assertTrue(this_thread_is_pinned())
+        check()
+        self.assertTrue(this_thread_is_pinned())
+
+    def test_slave_decorator_resets(self):
+
+        @use_slave
+        def check():
+            self.assertFalse(this_thread_is_pinned())
+
+        unpin_this_thread()
+        self.assertFalse(this_thread_is_pinned())
+        check()
+        self.assertFalse(this_thread_is_pinned())
+
+    def test_slave_context_manager(self):
+        pin_this_thread()
+        self.assertTrue(this_thread_is_pinned())
+        with use_slave:
+            self.assertFalse(this_thread_is_pinned())
+        self.assertTrue(this_thread_is_pinned())
+
+    def test_slave_context_manager_resets(self):
+        unpin_this_thread()
+        self.assertFalse(this_thread_is_pinned())
+        with use_slave:
+            self.assertFalse(this_thread_is_pinned())
+        self.assertFalse(this_thread_is_pinned())
+
+    def test_slave_context_manager_exception(self):
+        pin_this_thread()
+        self.assertTrue(this_thread_is_pinned())
+        with self.assertRaises(ValueError):
+            with use_slave:
+                self.assertFalse(this_thread_is_pinned())
+                raise ValueError
+        self.assertTrue(this_thread_is_pinned())
