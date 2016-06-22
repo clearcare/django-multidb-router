@@ -6,7 +6,7 @@ from multidb.conf import settings
 
 __all__ = ['this_thread_is_pinned', 'pin_this_thread', 'unpin_this_thread',
            'use_master', 'db_write', 'set_db_write_for_this_thread',
-           'unset_db_write_for_this_thread',
+           'use_slave', 'unset_db_write_for_this_thread',
            'this_thread_has_db_write_set',
            'set_db_write_for_this_thread_if_needed']
 
@@ -109,12 +109,12 @@ class UseSlave(object):
         return decorator
 
     def __enter__(self):
-        self.old = this_thread_has_db_write_set()
-        unset_db_write_for_this_thread()
+        self.old = this_thread_is_pinned()
+        unpin_this_thread()
 
     def __exit__(self, type, value, tb):
         if self.old:
-            set_db_write_for_this_thread()
+            pin_this_thread()
 
 use_slave = UseSlave()
 
