@@ -95,18 +95,11 @@ class UseMaster(object):
 use_master = UseMaster()
 
 
-class UseSlave(object):
+class UseSlave(UseMaster):
     """A contextmanager/decorator to use the slave database."""
     "Use this in cases where the usual behavior would be to pin to master,"
     "such as when the request method is POST, but you know you're not doing any writing."
     old = False
-
-    def __call__(self, func):
-        @wraps(func)
-        def decorator(*args, **kw):
-            with self:
-                return func(*args, **kw)
-        return decorator
 
     def __enter__(self):
         self.old = this_thread_is_pinned()
