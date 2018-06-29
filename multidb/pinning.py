@@ -6,7 +6,7 @@ from multidb.conf import settings
 
 __all__ = ['this_thread_is_pinned', 'pin_this_thread', 'unpin_this_thread',
            'use_master', 'db_write', 'set_db_write_for_this_thread',
-           'unset_db_write_for_this_thread',
+           'use_slave', 'unset_db_write_for_this_thread',
            'this_thread_has_db_write_set',
            'set_db_write_for_this_thread_if_needed']
 
@@ -93,6 +93,23 @@ class UseMaster(object):
             unpin_this_thread()
 
 use_master = UseMaster()
+
+
+class UseSlave(UseMaster):
+    """A contextmanager/decorator to use the slave database."""
+    "Use this in cases where the usual behavior would be to pin to master,"
+    "such as when the request method is POST, but you know you're not doing any writing."
+    old = False
+
+    def __enter__(self):
+        self.old = this_thread_is_pinned()
+        unpin_this_thread()
+
+    def __exit__(self, type, value, tb):
+        if self.old:
+            pin_this_thread()
+
+use_slave = UseSlave()
 
 
 def mark_as_write(response):
