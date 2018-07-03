@@ -9,7 +9,7 @@ from .pinning import (pin_this_thread, unpin_this_thread,
                       unset_db_write_for_this_thread)
 
 
-READ_ONLY_METHODS = ('GET', 'TRACE', 'HEAD', 'OPTIONS')
+READ_ONLY_METHODS = frozenset(['GET', 'TRACE', 'HEAD', 'OPTIONS'])
 
 
 class PinningRouterMiddleware(object):

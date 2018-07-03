@@ -7,6 +7,12 @@ INSTALLED_APPS = (
     'multidb',
 )
 
+MIDDLEWARE_CLASSES = (
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware'
+)
+
+# The default database should point to the master.
 DATABASES = {
     'default': {
         'NAME': 'master',
