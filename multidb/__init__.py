@@ -60,7 +60,8 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
     Typically, we set a cookie in middleware for certain request HTTP methods
     and give it a max age that's certain to be longer than the replication lag.
     The flag comes from that cookie.
-
+    
+    """
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin unless this thread is pinned."""
         return DEFAULT_DB_ALIAS if this_thread_is_pinned() else get_slave()
