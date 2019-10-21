@@ -8,6 +8,8 @@ from .pinning import (pin_this_thread, unpin_this_thread,
                       this_thread_has_db_write_set,
                       unset_db_write_for_this_thread)
 
+import threading
+
 
 READ_ONLY_METHODS = frozenset(['GET', 'TRACE', 'HEAD', 'OPTIONS'])
 
@@ -50,6 +52,16 @@ class PinningRouterMiddleware(object):
     def process_request(self, request):
         """Set the thread's pinning flag according to the presence of the
         incoming cookie and/or client fingerprint in the cache."""
+        try:
+            host = request.get_host()
+            subdomain = host.split('.')[0]
+            request.subdomain = subdomain
+            #print("subdomain :" + subdomain)
+            
+            current_thread = threading.current_thread()
+            current_thread.__dict__['subdomain']=subdomain
+        except:
+            print("no subdomain set")
         unset_db_write_for_this_thread()
         set_db_write_for_this_thread_if_needed(request)
         if self._pinned_because_of_prior_request(request) \
