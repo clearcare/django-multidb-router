@@ -38,11 +38,17 @@ class MasterSlaveRouter(object):
         import threading
         db_id = '0'
         current_thread = threading.current_thread().__dict__
-        subdomain = current_thread.get('subdomain')
-        for k,v in TENANT_CONFIG.items():
-            if subdomain in v:
-                db_id = str(k)
-        return '{}-{}'.format(db_name, db_id)
+        try:
+            subdomain = current_thread.get('subdomain')
+            for k,v in TENANT_CONFIG.items():
+                if subdomain in v:
+                    db_id = str(k)
+            resolved_db = '{}-{}'.format(db_name, db_id)
+            print('{}:{}'.format(subdomain, resolved_db))
+            return resolved_db
+        except:
+            print("no subdomain value set")
+            return db_name
 
 
 class PinningMasterSlaveRouter(MasterSlaveRouter):
