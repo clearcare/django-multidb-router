@@ -67,8 +67,8 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
         return self.resolve_multi_tenant_db(db_to_return)
 
 TENANT_CONFIG = {
-    '0': ['bg-hisc'],
-    '1': ['metzler'],
+    '0': ['bg-hisc','tenant0'],
+    '1': ['metzler','tenant1'],
 }
 
 if getattr(settings, 'SLAVE_DATABASES'):
