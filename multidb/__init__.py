@@ -9,6 +9,9 @@ from .pinning import this_thread_is_pinned, db_write  # noqa
 
 import threading
 
+
+DEFAULT_DB_ALIAS = 'default'
+
 class MasterSlaveRouter(object):
 
     def db_for_read(self, model, **hints):
@@ -19,18 +22,18 @@ class MasterSlaveRouter(object):
     def db_for_write(self, model, **hints):
         """Send all writes to the master."""
         print("db for write: " + model.__name__ if model is not None else "No Model")
-        return DEFAULT_DB_ALIAS
+        return self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
 
     def allow_relation(self, obj1, obj2, **hints):
         """Allow all relations, so FK validation stays quiet."""
         return True
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        return db == DEFAULT_DB_ALIAS
+        return db == self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
 
     def allow_syncdb(self, db, model):
         """Only allow syncdb on the master."""
-        return db == DEFAULT_DB_ALIAS
+        return db == self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
 
     def resolve_tenant_id(self):
         db_id = '0'
@@ -88,9 +91,8 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
         """Send reads to slaves in round-robin unless this thread is "stuck" to
         the master."""
         print("db for read override " + model.__name__ if model is not None else "No Model")
-        return DEFAULT_DB_ALIAS if this_thread_is_pinned() else get_slave()
+        return self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else get_slave()
 
-DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default')
 
 TENANT_CONFIG = {
     '0': ['bg-hisc','tenant-admin-0','tenant-hq-0'],
