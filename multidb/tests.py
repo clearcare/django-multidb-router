@@ -10,10 +10,19 @@ from multidb.middleware import (PINNING_COOKIE, PINNING_SECONDS,
                                 PinningRouterMiddleware)
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
                              unpin_this_thread, use_master, db_write)
+print("Tests running....")
 
+import threading
+
+thread_in_action = threading.current_thread()
+thread_in_action['subdomain'] = 'metzler'
+
+DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
 
 class UnpinningTestCase(TestCase):
     """Test case that unpins the thread on tearDown"""
+
+    print("UnpinningTestCase running...")
 
     def tearDown(self):
         unpin_this_thread()
@@ -21,6 +30,8 @@ class UnpinningTestCase(TestCase):
 
 class MasterSlaveRouterTests(TestCase):
     """Tests for MasterSlaveRouter"""
+
+    print("MasterSlaveRouterTests running...")
 
     def test_db_for_read(self):
         eq_(MasterSlaveRouter().db_for_read(None), get_slave())
@@ -47,6 +58,8 @@ class MasterSlaveRouterTests(TestCase):
 class SettingsTests(TestCase):
     """Tests for settings defaults"""
 
+    print("SettingsTests running...")
+
     def test_cookie_default(self):
         """Check that the cookie name has the right default."""
         eq_(PINNING_COOKIE, 'multidb_pin_writes')
@@ -59,6 +72,8 @@ class SettingsTests(TestCase):
 class PinningTests(UnpinningTestCase):
     """Tests for "pinning" functionality, above and beyond what's inherited
     from MasterSlaveRouter"""
+
+    print("PinningTests running...")
 
     def test_pinning_encapsulation(self):
         """Check the pinning getters and setters."""
@@ -102,6 +117,8 @@ class PinningTests(UnpinningTestCase):
 
 class MiddlewareTests(UnpinningTestCase):
     """Tests for the middleware that supports pinning"""
+
+    print("MiddlewareTests running...")
 
     def setUp(self):
         super(MiddlewareTests, self).setUp()
@@ -169,6 +186,9 @@ class MiddlewareTests(UnpinningTestCase):
 
 
 class UseMasterTests(TestCase):
+
+    print("UseMasterTests running...")
+
     def test_decorator(self):
         @use_master
         def check():
