@@ -43,6 +43,7 @@ class MasterSlaveRouter(object):
         for k,v in TENANT_CONFIG.items():
             if subdomain in v:
                 db_id = str(k)
+        print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
         return db_id
 
     def resolve_multi_tenant_db(self, db_name):
