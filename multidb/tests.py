@@ -17,8 +17,6 @@ import threading
 thread_in_action = threading.current_thread()
 thread_in_action['subdomain'] = 'metzler'
 
-DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
-
 class UnpinningTestCase(TestCase):
     """Test case that unpins the thread on tearDown"""
 
