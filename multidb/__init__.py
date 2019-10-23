@@ -13,13 +13,17 @@ class MasterSlaveRouter(object):
 
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin."""
-        print("db for read " + model.__name__ if model is not None else "No Model")
-        return get_slave()
+        # print("db for read " + model.__name__ if model is not None else "No Model")
+        resolved_db = get_slave()
+        print_with_thread_details("db for read" , resolved_db)
+        return resolved_db
 
     def db_for_write(self, model, **hints):
         """Send all writes to the master."""
-        print("db for write: " + model.__name__ if model is not None else "No Model")
-        return DEFAULT_DB_ALIAS
+        # print("db for write: " + model.__name__ if model is not None else "No Model")
+        resolved_db =DEFAULT_DB_ALIAS
+        print_with_thread_details("db for write" , resolved_db)
+        return resolved_db
 
     def allow_relation(self, obj1, obj2, **hints):
         """Allow all relations, so FK validation stays quiet."""
@@ -45,10 +49,10 @@ class MasterSlaveRouter(object):
         try:
             db_id = self.resolve_tenant_id()
             resolved_db = '{}-{}'.format(db_name, db_id)
-            print('{}:{}'.format(subdomain, resolved_db))
+            # print('{}:{}'.format(subdomain, resolved_db))
             return resolved_db
         except:
-            print("no subdomain value set")
+            # print("no subdomain value set")
             return db_name
 
     def resolve_multi_tenant_slave_db(self):
@@ -86,8 +90,10 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin unless this thread is "stuck" to
         the master."""
-        print("db for read override " + model.__name__ if model is not None else "No Model")
-        return DEFAULT_DB_ALIAS if this_thread_is_pinned() else get_slave()
+        # print("db for read override " + model.__name__ if model is not None else "No Model")
+        resolved_db = DEFAULT_DB_ALIAS if this_thread_is_pinned() else get_slave()
+        print_with_thread_details("db for read override" , resolved_db)
+        return resolved_db
 
 DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default')
 
@@ -112,6 +118,22 @@ TENANT_CONFIG = {
 #     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
 
 slaves = MasterSlaveRouter().resolve_multi_tenant_slave_db()
+
+def print_with_thread_details(event_name, db_name):
+    subdomain = '--'
+    thread_id = '--'
+    try:
+        current_thread = threading.current_thread().__dict__
+        subdomain = current_thread.get('subdomain')
+        thread_id = current_thread.get('id')
+    except:
+        pass
+    print("event={}::thread={}::db={}::subdomain={}".format(
+                                                    event_name,
+                                                    thread_id, 
+                                                    db_name, 
+                                                    subdomain
+                                                ))
 
 def get_slave():
     """Returns the alias of a slave database."""
