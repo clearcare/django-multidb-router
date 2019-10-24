@@ -113,7 +113,8 @@ def print_with_thread_details(event_name, db_name, hints=None):
                                                 ))
     try:
         if hints is not None:
-            print("hints " + hints['instance'].__name__ + str(getattr(hints['instance'], id)))
+            print("hints " + hints['instance'])
+            print("hints " + hints['instance'].__name__ )
     except:
         pass
 
