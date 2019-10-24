@@ -71,7 +71,7 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
         the master."""
         # print("db for read override " + model.__name__ if model is not None else "No Model")
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else get_slave(self.get_tenant_id())
-        print_with_thread_details("db for read override" , resolved_db)
+        print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
 
 
@@ -96,7 +96,7 @@ TENANT_CONFIG = {
 # else:
 #     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
 
-def print_with_thread_details(event_name, db_name):
+def print_with_thread_details(event_name, db_name, hints=None):
     subdomain = '--'
     thread_id = '--'
     try:
@@ -111,6 +111,8 @@ def print_with_thread_details(event_name, db_name):
                                                     db_name, 
                                                     subdomain
                                                 ))
+    if hints is not None:
+        print(hints) 
 
 def get_tenant_slave_dbs():
     dbs = []
