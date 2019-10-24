@@ -114,8 +114,11 @@ def print_with_thread_details(event_name, db_name, hints=None):
     try:
         if hints is not None:
             for k,v in hints.items():
-                print("key = " + k)
-                print("value = " + v)
+                try:
+                    print("key = " + str(k))
+                    print("value = " + str(v))
+                except:
+                    pass
     except Exception as e:
             print("hints exception: " + str(e))
 
