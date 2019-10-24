@@ -116,7 +116,7 @@ def print_with_thread_details(event_name, db_name, hints=None):
             for k,v in hints.items():
                 try:
                     print("key = " + str(k))
-                    print("value = " + str(v))
+                    #print("value = " + str(v))
                 except:
                     pass
     except Exception as e:
