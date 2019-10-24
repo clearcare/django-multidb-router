@@ -111,8 +111,11 @@ def print_with_thread_details(event_name, db_name, hints=None):
                                                     db_name, 
                                                     subdomain
                                                 ))
-    if hints is not None:
-        print(hints) 
+    try:
+        if hints is not None:
+            print("hints " + str(hints))
+    except:
+        pass
 
 def get_tenant_slave_dbs():
     dbs = []
