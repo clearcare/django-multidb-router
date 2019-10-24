@@ -102,7 +102,7 @@ def print_with_thread_details(event_name, db_name, hints=None):
     try:
         current_thread = threading.current_thread().__dict__
         subdomain = current_thread.get('subdomain')
-        thread_id = current_thread.get('id')
+        thread_id = threading.current_thread().__name__
     except:
         pass
     print("event={}::thread={}::db={}::subdomain={}".format(
@@ -113,8 +113,7 @@ def print_with_thread_details(event_name, db_name, hints=None):
                                                 ))
     try:
         if hints is not None:
-            print("hints " + hints['instance'])
-            print("hints " + hints['instance'].__name__ )
+            print("hints " + hints.get('instance'))
     except:
         pass
 
