@@ -12,7 +12,12 @@ from multidb.conf import settings
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
                              unpin_this_thread, use_master, use_slave, db_write)
+import threading
 
+thread_in_action = threading.current_thread().__dict__
+thread_in_action['subdomain'] = 'testserver'
+
+DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default','0')
 
 def expire_cookies(cookies):
     cookie_names = cookies.keys()
@@ -64,6 +69,7 @@ class PinningTests(TestCase):
     def test_pinned_reads(self):
         """Test PinningMasterSlaveRouter.db_for_read() when pinned and when
         not."""
+        
         router = PinningMasterSlaveRouter()
 
         self.assertEquals(router.db_for_read(None), get_slave())

@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from nose.tools import eq_
 
-from multidb import (DEFAULT_DB_ALIAS, MasterSlaveRouter,
+from multidb import (MasterSlaveRouter,
                      PinningMasterSlaveRouter, get_slave)
 from multidb.middleware import (PINNING_COOKIE, PINNING_SECONDS,
                                 PinningRouterMiddleware)
@@ -14,8 +14,10 @@ print("Tests running....")
 
 import threading
 
-thread_in_action = threading.current_thread()
-thread_in_action['subdomain'] = 'metzler'
+thread_in_action = threading.current_thread().__dict__
+thread_in_action['subdomain'] = 'testserver'
+
+DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default','0')
 
 class UnpinningTestCase(TestCase):
     """Test case that unpins the thread on tearDown"""
@@ -28,8 +30,6 @@ class UnpinningTestCase(TestCase):
 
 class MasterSlaveRouterTests(TestCase):
     """Tests for MasterSlaveRouter"""
-
-    print("MasterSlaveRouterTests running...")
 
     def test_db_for_read(self):
         eq_(MasterSlaveRouter().db_for_read(None), get_slave())
@@ -120,7 +120,6 @@ class MiddlewareTests(UnpinningTestCase):
 
     def setUp(self):
         super(MiddlewareTests, self).setUp()
-
         # Every test uses these, so they're okay as attrs.
         self.request = HttpRequest()
         self.middleware = PinningRouterMiddleware()
