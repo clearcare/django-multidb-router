@@ -113,9 +113,10 @@ def print_with_thread_details(event_name, db_name, hints=None):
                                                 ))
     try:
         if hints is not None:
-            print("hints " + hints.get('instance'))
-    except:
-        pass
+            print("hints " + hints.__name__)
+            print("hints " + getattr(hints, 'agency'))
+    except Exception as e:
+            print(e)
 
 def get_tenant_slave_dbs():
     dbs = []
