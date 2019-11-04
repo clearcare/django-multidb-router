@@ -52,3 +52,6 @@ DATABASES = get_tenant_dbs()
 ROOT_URLCONF = __name__
 
 SECRET_KEY = '!q9)w@f2gf1+9z2bf75!avfhslm7baifav-(47ivv)x@f(r7sg'
+
+TENANT_SERVICE_API_KEY = "da2-yhem3pedtjfmnhrrjeam4fdxwa"
+TENANT_SERVICE_API_ENDPOINT = "https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql"

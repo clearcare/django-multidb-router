@@ -74,12 +74,55 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
         print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
 
+def get_tenant_config():
+    import requests, json
+    api_key = settings.TENANT_SERVICE_API_KEY
+    api_endpoint = settings.TENANT_SERVICE_API_ENDPOINT
+    headers = {"x-api-key": api_key}
+    query = """
+    query {
+        getTenants {
+            id,
+            admin {
+                portal {
+                    url
+                }
+            },
+            hq {
+                portal {
+                    url
+                }
+            },
+            franchisor {
+                id,
+                agencies {
+                    portal {
+                        url
+                    }
+                }
+            }
+        }
+    }
+    """
+    response = requests.post(api_endpoint,
+                            json={'query': query}, headers=headers)
+
+    items = response.json()['data']['getTenants']
+
+    tenants = {}
+    for item in items:
+        agencies = [x['portal']['url'] for x in item['franchisor']['agencies']]
+        base_portals = [item['admin']['portal']['url'], item['hq']['portal']['url']]
+        tenants[item['id']] = [x for x in (base_portals + agencies)]
+    return tenants
+
+TENANT_CONFIG = get_tenant_config()
+# {
+#     # '0': ['bg-hisc','tenant-admin-0','tenant-hq-0','testserver'],
+#     # '1': ['metzler','tenant-admin-1','tenant-hq-1'],
+# }
 
 
-TENANT_CONFIG = {
-    '0': ['bg-hisc','tenant-admin-0','tenant-hq-0','testserver'],
-    '1': ['metzler','tenant-admin-1','tenant-hq-1'],
-}
 
 # if getattr(settings, 'SLAVE_DATABASES'):
 #     # Shuffle the list so the first slave db isn't slammed during startup.
