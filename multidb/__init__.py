@@ -179,7 +179,7 @@ def get_tenant_slave_dbs():
         dbs = list(settings.SLAVE_DATABASES)
         # Shuffle the list so the first slave db isn't slammed during startup.
         random.shuffle(dbs)
-        slaves_temp = itertools.cycle(dbs)
+        slaves = itertools.cycle(dbs)
         # Set the slaves as test mirrors of the master.
         for db in dbs:
             resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
@@ -189,9 +189,9 @@ def get_tenant_slave_dbs():
                 settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
             else:
                 settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-        # else:
-        #     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-        return slaves_temp
+    else:
+        slaves = itertools.repeat(DEFAULT_DB_ALIAS)
+    return slaves
 
 def parse_tenant_id_from_db_config(db_config_name):
     try:
