@@ -45,7 +45,8 @@ class MasterSlaveRouter(object):
         for k,v in TENANT_CONFIG.items():
             if subdomain in v:
                 db_id = str(k)
-        print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
+        if (settings.TENANT_LOG_MODE == "DEBUG"):
+            print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
         return db_id
 
     def resolve_multi_tenant_db(self, db_name, tenant_id=None):
@@ -117,6 +118,7 @@ def get_tenant_config():
     return tenants
 
 TENANT_CONFIG = get_tenant_config()
+print(TENANT_CONFIG)
 # {
 #     # '0': ['bg-hisc','tenant-admin-0','tenant-hq-0','testserver'],
 #     # '1': ['metzler','tenant-admin-1','tenant-hq-1'],
@@ -148,47 +150,48 @@ def print_with_thread_details(event_name, db_name, hints=None):
         thread_id = threading.current_thread().__name__
     except:
         pass
-    print("event={}::thread={}::db={}::subdomain={}".format(
-                                                    event_name,
-                                                    thread_id, 
-                                                    db_name, 
-                                                    subdomain
-                                                ))
-    try:
-        if hints is not None:
-            for k,v in hints.items():
-                try:
-                    print("key = " + str(k))
-                    #print("value = " + str(v))
-                except:
-                    pass
-    except Exception as e:
+    if (settings.TENANT_LOG_MODE == "DEBUG"):
+        print("event={}::thread={}::db={}::subdomain={}".format(
+                                                        event_name,
+                                                        thread_id, 
+                                                        db_name, 
+                                                        subdomain
+                                                    ))
+        try:
+            if hints is not None:
+                for k,v in hints.items():
+                    try:
+                        print("key = " + str(k))
+                        #print("value = " + str(v))
+                    except:
+                        pass
+        except Exception as e:
             print("hints exception: " + str(e))
 
 def get_tenant_slave_dbs():
     dbs = []
-    try:
-        # check for slaves-<tenantId> in the DATABASES config value to get a match
-        tenant_slaves_list = [x for x,y in settings.DATABASES.items() if ("slave" in x)]
-        dbs = tenant_slaves_list
-    except:
-        if getattr(settings, 'SLAVE_DATABASES'):
-            dbs = list(settings.SLAVE_DATABASES)
-    # Shuffle the list so the first slave db isn't slammed during startup.
-    random.shuffle(dbs)
-    slaves_temp = itertools.cycle(dbs)
-    # Set the slaves as test mirrors of the master.
-    for db in dbs:
-        resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
-                                                    DEFAULT_DB_ALIAS, 
-                                                    parse_tenant_id_from_db_config(db))
-        if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-            settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-        else:
-            settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-    # else:
-    #     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-    return slaves_temp
+    # try:
+    #     # check for slaves-<tenantId> in the DATABASES config value to get a match
+    #     tenant_slaves_list = [x for x,y in settings.DATABASES.items() if ("slave" in x)]
+    #     dbs = tenant_slaves_list
+    # except:
+    if getattr(settings, 'SLAVE_DATABASES'):
+        dbs = list(settings.SLAVE_DATABASES)
+        # Shuffle the list so the first slave db isn't slammed during startup.
+        random.shuffle(dbs)
+        slaves_temp = itertools.cycle(dbs)
+        # Set the slaves as test mirrors of the master.
+        for db in dbs:
+            resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
+                                                        DEFAULT_DB_ALIAS, 
+                                                        parse_tenant_id_from_db_config(db))
+            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+            else:
+                settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+        # else:
+        #     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
+        return slaves_temp
 
 def parse_tenant_id_from_db_config(db_config_name):
     try:

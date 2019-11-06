@@ -30,28 +30,31 @@ def get_tenant_dbs():
             'default-0': tenant_0_db_config,
             'masterdb-0': tenant_0_db_config,
             'masterdb2-0': tenant_0_db_config,
-            #'workerslavedb1-0': tenant_0_db_config,
+            'workerslavedb1-0': tenant_0_db_config,
             'slavedb1-0': tenant_0_db_config,
-            # 'slavedb2-0': tenant_0_db_config,
-            # 'slavedb3-0': tenant_0_db_config,
-            # 'slavedb4-0': tenant_0_db_config,
-            # 'api-slave-db1-0': tenant_0_db_config,
+            'slavedb2-0': tenant_0_db_config,
+            'slavedb3-0': tenant_0_db_config,
+            'slavedb4-0': tenant_0_db_config,
+            'api-slave-db1-0': tenant_0_db_config,
             'default-1': tenant_1_db_config,
             'masterdb-1': tenant_1_db_config,
             'masterdb2-1': tenant_1_db_config,
             'workerslavedb1-1': tenant_1_db_config,
-            #'slavedb1-1': tenant_1_db_config,
-            # 'slavedb2-1': tenant_1_db_config,
-            # 'slavedb3-1': tenant_1_db_config,
-            # 'slavedb4-1': tenant_1_db_config,
-            # 'api-slave-db1-1': tenant_1_db_config,
+            'slavedb1-1': tenant_1_db_config,
+            'slavedb2-1': tenant_1_db_config,
+            'slavedb3-1': tenant_1_db_config,
+            'slavedb4-1': tenant_1_db_config,
+            'api-slave-db1-1': tenant_1_db_config,
         }
 
 DATABASES = get_tenant_dbs()
 
 ROOT_URLCONF = __name__
 
+SLAVE_DATABASES = ['workerslavedb1-1','slavedb1-0']
+
 SECRET_KEY = '!q9)w@f2gf1+9z2bf75!avfhslm7baifav-(47ivv)x@f(r7sg'
 
 TENANT_SERVICE_API_KEY = "da2-yhem3pedtjfmnhrrjeam4fdxwa"
 TENANT_SERVICE_API_ENDPOINT = "https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql"
+TENANT_LOG_MODE = "DEBUG"
