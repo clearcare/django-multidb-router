@@ -118,7 +118,7 @@ def get_tenant_config():
     return tenants
 
 TENANT_CONFIG = get_tenant_config()
-print(TENANT_CONFIG)
+print("router tenant config " + str(TENANT_CONFIG))
 # {
 #     # '0': ['bg-hisc','tenant-admin-0','tenant-hq-0','testserver'],
 #     # '1': ['metzler','tenant-admin-1','tenant-hq-1'],
@@ -208,13 +208,15 @@ def get_slave(tenant_id='0'):
     return resolved_slave_node
 
 def get_tenant_slave_node(slave_node, tenant_id):
+    if slave_node == DEFAULT_DB_ALIAS:
+        slave_node = DEFAULT_DB_ALIAS + "-" + tenant_id
     if ("-" + tenant_id) in slave_node:
         if (settings.TENANT_LOG_MODE == "DEBUG"):
-            print("slave node found for tenant " + str(slave_node))
+            print("slave node found for tenant = " + str(slave_node))
         return slave_node
     else:
         if (settings.TENANT_LOG_MODE == "DEBUG"):
-            print("no slave node found for tenant" + str(slave_node))
+            print("no slave node found for tenant, provided node name = " + str(slave_node))
         return get_tenant_slave_node(next(tenant_slaves), tenant_id)
 
 tenant_slaves = get_tenant_slave_dbs()
