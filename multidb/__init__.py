@@ -209,8 +209,12 @@ def get_slave(tenant_id='0'):
 
 def get_tenant_slave_node(slave_node, tenant_id):
     if ("-" + tenant_id) in slave_node:
+        if (settings.TENANT_LOG_MODE == "DEBUG"):
+            print("slave node found for tenant " + str(slave_node))
         return slave_node
     else:
+        if (settings.TENANT_LOG_MODE == "DEBUG"):
+            print("no slave node found for tenant" + str(slave_node))
         return get_tenant_slave_node(next(tenant_slaves), tenant_id)
 
 tenant_slaves = get_tenant_slave_dbs()
