@@ -172,29 +172,27 @@ def print_with_thread_details(event_name, db_name, hints=None):
             print("hints exception: " + str(e))
 
 def get_tenant_slave_dbs():
-    dbs = []
-    # try:
-    #     # check for slaves-<tenantId> in the DATABASES config value to get a match
-    #     tenant_slaves_list = [x for x,y in settings.DATABASES.items() if ("slave" in x)]
-    #     dbs = tenant_slaves_list
-    # except:
-    if getattr(settings, 'SLAVE_DATABASES'):
-        dbs = list(settings.SLAVE_DATABASES)
-        # Shuffle the list so the first slave db isn't slammed during startup.
-        random.shuffle(dbs)
-        slaves = itertools.cycle(dbs)
-        # Set the slaves as test mirrors of the master.
-        for db in dbs:
-            resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
-                                                        DEFAULT_DB_ALIAS, 
-                                                        parse_tenant_id_from_db_config(db))
-            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-            else:
-                settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-    else:
-        slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-    return slaves
+    try:
+        dbs = []
+        if getattr(settings, 'SLAVE_DATABASES'):
+            dbs = list(settings.SLAVE_DATABASES)
+            # Shuffle the list so the first slave db isn't slammed during startup.
+            random.shuffle(dbs)
+            slaves = itertools.cycle(dbs)
+            # Set the slaves as test mirrors of the master.
+            for db in dbs:
+                resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
+                                                            DEFAULT_DB_ALIAS, 
+                                                            parse_tenant_id_from_db_config(db))
+                if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                    settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+                else:
+                    settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+        else:
+            slaves = itertools.repeat(DEFAULT_DB_ALIAS)
+        return slaves
+    except Exception as ex:
+        print("error in get_tenant_slave_dbs: " + str(ex))
 
 def parse_tenant_id_from_db_config(db_config_name):
     try:
