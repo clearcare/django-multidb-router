@@ -38,10 +38,13 @@ class MasterSlaveRouter(object):
         """Only allow syncdb on the master."""
         return db == self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
 
-    def get_tenant_id(self):
+    def get_tenant_id(self, sub_domain=None):
         db_id = '0'
-        current_thread = threading.current_thread().__dict__
-        subdomain = current_thread.get('subdomain')
+        if sub_domain is None:
+            current_thread = threading.current_thread().__dict__
+            subdomain = current_thread.get('subdomain')
+        else:
+            subdomain = sub_domain
         for k,v in TENANT_CONFIG.items():
             if subdomain in v:
                 db_id = str(k)
@@ -199,11 +202,12 @@ def parse_tenant_id_from_db_config(db_config_name):
     except:
         return None
 
-def get_slave(tenant_id='0'):
+def get_slave(tenant_id='0', sub_domain=None):
     """Returns the alias of a slave database.
         tenant_id = 0 for unit tests
     """
-    #return next(tenant_slaves)
+    if sub_domain is not None:
+        tenant_id = MasterSlaveRouter().get_tenant_id(sub_domain=sub_domain)
     resolved_slave_node = get_tenant_slave_node(next(tenant_slaves), tenant_id)
     return resolved_slave_node
 
