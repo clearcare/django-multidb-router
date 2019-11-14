@@ -31,41 +31,42 @@ if db_router:
             slaves = itertools.repeat(DEFAULT_DB_ALIAS)
     else:
         IS_MULTI_TENANT = True
-        print("========a===============")
-        if getattr(settings, 'SLAVE_DATABASES'):
-            dbs = list(settings.SLAVE_DATABASES)
-            print("========b===============")
-            # lets resolve for tenancy per slave database mentioned
-            # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
-            resolved_dbs = []
-            for db in dbs:
-                print("========c===============" + str(db))
-                tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "." in x and x.split(".")[1].lower()==db.lower() ]
-                #resolved_dbs.update(tenant_databases_matching_dbs)
+        pass
+        # print("========a===============")
+        # if getattr(settings, 'SLAVE_DATABASES'):
+        #     dbs = list(settings.SLAVE_DATABASES)
+        #     print("========b===============")
+        #     # lets resolve for tenancy per slave database mentioned
+        #     # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
+        #     resolved_dbs = []
+        #     for db in dbs:
+        #         print("========c===============" + str(db))
+        #         tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "." in x and x.split(".")[1].lower()==db.lower() ]
+        #         #resolved_dbs.update(tenant_databases_matching_dbs)
 
-            dbs = resolved_dbs
-            print("resolved slave dbs across tenants = " + str(dbs))
-            # Shuffle the list so the first slave db isn't slammed during startup.
-            random.shuffle(dbs)
-            slaves = itertools.cycle(dbs)
-            def parse_tenant_id_from_db_config(db_config_name):
-                try:
-                    return db_config_name.split(".")[0]
-                except:
-                    return None
-            # Set the slaves as test mirrors of the master.
-            for db in dbs:
-                # for each matched tenant db, set its correspoinding default value as mirror
-                tenant_id = parse_tenant_id_from_db_config(db)
-                if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                    settings.DATABASES[db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
-                else:
-                    settings.DATABASES[db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
-        else:
-            # get me all default tenant db and add it to slaves node
-            tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "." in x]
-            random.shuffle(tenant_databases_matching_dbs)
-            slaves = itertools.cycle(tenant_databases_matching_dbs)
+        #     dbs = resolved_dbs
+        #     print("resolved slave dbs across tenants = " + str(dbs))
+        #     # Shuffle the list so the first slave db isn't slammed during startup.
+        #     random.shuffle(dbs)
+        #     slaves = itertools.cycle(dbs)
+        #     def parse_tenant_id_from_db_config(db_config_name):
+        #         try:
+        #             return db_config_name.split(".")[0]
+        #         except:
+        #             return None
+        #     # Set the slaves as test mirrors of the master.
+        #     for db in dbs:
+        #         # for each matched tenant db, set its correspoinding default value as mirror
+        #         tenant_id = parse_tenant_id_from_db_config(db)
+        #         if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+        #             settings.DATABASES[db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+        #         else:
+        #             settings.DATABASES[db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+        # else:
+        #     # get me all default tenant db and add it to slaves node
+        #     tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "." in x]
+        #     random.shuffle(tenant_databases_matching_dbs)
+        #     slaves = itertools.cycle(tenant_databases_matching_dbs)
 
 def get_slave(sub_domain=None):
     if 'multidb.PinningMasterSlaveRouter' in db_router:
