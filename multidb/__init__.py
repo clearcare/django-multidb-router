@@ -18,6 +18,7 @@ if db_router:
         if getattr(settings, 'SLAVE_DATABASES'):
             # Shuffle the list so the first slave db isn't slammed during startup.
             dbs = list(settings.SLAVE_DATABASES)
+            print("resolved slave dbs across tenants = " + str(dbs))
             random.shuffle(dbs)
             slaves = itertools.cycle(dbs)
             # Set the slaves as test mirrors of the master.
@@ -37,14 +38,13 @@ if db_router:
             # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
             resolved_dbs = []
             for db in dbs:
-                tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if db in x and "." in x]
+                tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "." in x and x.split(".")[1].lower()==db.lower() ]
                 #resolved_dbs.update(tenant_databases_matching_dbs)
 
             dbs = resolved_dbs
-            print("resolves slave dbs across tenants = " + str(dbs))
+            print("resolved slave dbs across tenants = " + str(dbs))
             # Shuffle the list so the first slave db isn't slammed during startup.
             random.shuffle(dbs)
-            
             slaves = itertools.cycle(dbs)
             def parse_tenant_id_from_db_config(db_config_name):
                 try:
@@ -116,7 +116,8 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         if sub_domain is not None:
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
         # check if slaves has tenant specific values, if not return empty
-        
+        if not slaves:
+            return tenant_id + ".default"
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 

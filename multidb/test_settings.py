@@ -53,7 +53,7 @@ DATABASE_ROUTERS = ('multidb.MultiTenantPinningMasterSlaveRouter',)
 
 ROOT_URLCONF = __name__
 
-SLAVE_DATABASES = ['default']
+SLAVE_DATABASES = ['slavedb1']
 
 SECRET_KEY = '!q9)w@f2gf1+9z2bf75!avfhslm7baifav-(47ivv)x@f(r7sg'
 
