@@ -324,9 +324,9 @@ def get_env(name, default=None, prefix='CC_'):
     except:
         return val
 
-TENANT_SERVICE_API_KEY = get_env(name="TENANT_SERVICE_API_KEY",default="da2-yhem3pedtjfmnhrrjeam4fdxwa")
-TENANT_SERVICE_API_ENDPOINT = get_env(name="TENANT_SERVICE_API_ENDPOINT",default="https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql")
-TENANT_LOG_MODE = get_env(name="TENANT_LOG_MODE", default="DEBUG_TURNED_OFF")
+TENANT_SERVICE_API_KEY = settings.TENANT_SERVICE_API_KEY #get_env(name="TENANT_SERVICE_API_KEY",default="da2-yhem3pedtjfmnhrrjeam4fdxwa")
+TENANT_SERVICE_API_ENDPOINT = settings.TENANT_SERVICE_API_ENDPOINT #get_env(name="TENANT_SERVICE_API_ENDPOINT",default="https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql")
+TENANT_LOG_MODE = settings.TENANT_LOG_MODE #get_env(name="TENANT_LOG_MODE", default="DEBUG_TURNED_OFF")
 TENANT_DB_CONFIGS = {}
 
 def print_with_thread_details(event_name, db_name, hints=None):
