@@ -116,7 +116,10 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         if sub_domain is not None:
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
         # check if slaves has tenant specific values, if not return empty
-        if not slaves:
+        try:
+            if not slaves:
+                return tenant_id + ".default"
+        except:
             return tenant_id + ".default"
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
