@@ -49,11 +49,11 @@ def get_tenant_dbs():
 
 DATABASES = get_tenant_dbs()
 
-DATABASE_ROUTERS = ('multidb.PinningMasterSlaveRouter',)
+DATABASE_ROUTERS = ('multidb.MultiTenantPinningMasterSlaveRouter',)
 
 ROOT_URLCONF = __name__
 
-SLAVE_DATABASES = ['0.workerslavedb1']
+SLAVE_DATABASES = ['0.default']
 
 SECRET_KEY = '!q9)w@f2gf1+9z2bf75!avfhslm7baifav-(47ivv)x@f(r7sg'
 

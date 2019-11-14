@@ -48,7 +48,7 @@ if db_router:
 
             # get me all db across tenant based on the db in loop
             tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
-            
+            print("matched tenant slave dbs-====" + str(tenant_databases_matching_dbs))
             # for each matched tenant db, set its correspoinding default value as mirror
             for tenant_matched_db in tenant_databases_matching_dbs:
                 tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
@@ -59,7 +59,7 @@ if db_router:
         else:
             # get me all db across tenant based on the db in loop
             tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
-
+            print("matched tenant defult dbs-====" + str(tenant_databases_matching_dbs))
             # for each matched tenant db, set its correspoinding default value as mirror
             for tenant_matched_db in tenant_databases_matching_dbs:
                 tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)

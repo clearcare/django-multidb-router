@@ -17,7 +17,7 @@ import threading
 thread_in_action = threading.current_thread().__dict__
 thread_in_action['subdomain'] = 'testserver'
 
-DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default','0')
+DEFAULT_DB_ALIAS = 'default'
 
 class UnpinningTestCase(TestCase):
     """Test case that unpins the thread on tearDown"""

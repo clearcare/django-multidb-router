@@ -6,8 +6,8 @@ from django.test import TestCase
 from django.test.client import Client
 from django.test.utils import override_settings
 
-from multidb import (DEFAULT_DB_ALIAS, MasterSlaveRouter,
-                     PinningMasterSlaveRouter)
+from multidb import (DEFAULT_DB_ALIAS, MultiTenantMasterSlaveRouter as MasterSlaveRouter,
+                     MultiTenantMasterPinningSlaveRouter as PinningMasterSlaveRouter)
 from multidb.conf import settings
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
@@ -17,7 +17,7 @@ import threading
 thread_in_action = threading.current_thread().__dict__
 thread_in_action['subdomain'] = 'testserver'
 
-DEFAULT_DB_ALIAS = "default"
+DEFAULT_DB_ALIAS = "0.default"
 
 def expire_cookies(cookies):
     cookie_names = cookies.keys()
