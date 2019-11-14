@@ -31,8 +31,19 @@ if db_router:
     else:
         IS_MULTI_TENANT = True
         dbs = list(settings.SLAVE_DATABASES)
+
+        # lets resolve for tenancy per slave database mentioned
+        # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
+        resolved_dbs = []
+        for db in dbs:
+            tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if db in x and "." in x]
+            #resolved_dbs.update(tenant_databases_matching_dbs)
+
+        dbs = resolved_dbs
+        print("resolved dbs for slave in multidb = " + str(dbs))
         # Shuffle the list so the first slave db isn't slammed during startup.
         random.shuffle(dbs)
+        
         slaves = itertools.cycle(dbs)
         def parse_tenant_id_from_db_config(db_config_name):
             try:
@@ -41,30 +52,19 @@ if db_router:
                 return None
         # Set the slaves as test mirrors of the master.
         for db in dbs:
-            # the SLAVE_DATABASES is expected to be an array of tenant_id.db_key
-            # resolved_db_name = MultiTenantMasterSlaveRouter().resolve_multi_tenant_db(
-            #                                             DEFAULT_DB_ALIAS, 
-            #                                             parse_tenant_id_from_db_config(db))
-
-            # get me all db across tenant based on the db in loop
-            tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
-            print("matched tenant slave dbs-====" + str(tenant_databases_matching_dbs))
             # for each matched tenant db, set its correspoinding default value as mirror
-            for tenant_matched_db in tenant_databases_matching_dbs:
-                tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
-                if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                    settings.DATABASES[tenant_matched_db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
-                else:
-                    settings.DATABASES[tenant_matched_db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+            tenant_id = parse_tenant_id_from_db_config(db)
+            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                settings.DATABASES[db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+            else:
+                settings.DATABASES[db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
         else:
             # get me all db across tenant based on the db in loop
-            tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
-            print("matched tenant defult dbs-====" + str(tenant_databases_matching_dbs))
+            tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "." in x]
             # for each matched tenant db, set its correspoinding default value as mirror
             for tenant_matched_db in tenant_databases_matching_dbs:
                 tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
                 slaves = itertools.repeat(tenant_id+".default")
-    
 
 class MasterSlaveRouter(object):
 
@@ -116,6 +116,8 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         """
         if sub_domain is not None:
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
+        # check if slaves has tenant specific values, if not return empty
+        
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 

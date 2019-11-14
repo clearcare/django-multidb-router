@@ -36,15 +36,15 @@ def get_tenant_dbs():
             '0.slavedb3': tenant_0_db_config,
             '0.slavedb4': tenant_0_db_config,
             '0.api-slave-db1': tenant_0_db_config,
-            '1.default': tenant_1_db_config,
-            '1.masterdb': tenant_1_db_config,
-            '1.masterdb2': tenant_1_db_config,
-            '1.workerslavedb1': tenant_1_db_config,
-            '1.slavedb1': tenant_1_db_config,
-            '1.slavedb2': tenant_1_db_config,
-            '1.slavedb3': tenant_1_db_config,
-            '1.slavedb4': tenant_1_db_config,
-            '1.api-slave-db1': tenant_1_db_config,
+            # '1.default': tenant_1_db_config,
+            # '1.masterdb': tenant_1_db_config,
+            # '1.masterdb2': tenant_1_db_config,
+            # '1.workerslavedb1': tenant_1_db_config,
+            # '1.slavedb1': tenant_1_db_config,
+            # '1.slavedb2': tenant_1_db_config,
+            # '1.slavedb3': tenant_1_db_config,
+            # '1.slavedb4': tenant_1_db_config,
+            # '1.api-slave-db1': tenant_1_db_config,
         }
 
 DATABASES = get_tenant_dbs()
@@ -53,7 +53,7 @@ DATABASE_ROUTERS = ('multidb.MultiTenantPinningMasterSlaveRouter',)
 
 ROOT_URLCONF = __name__
 
-SLAVE_DATABASES = ['0.default']
+SLAVE_DATABASES = ['default']
 
 SECRET_KEY = '!q9)w@f2gf1+9z2bf75!avfhslm7baifav-(47ivv)x@f(r7sg'
 
