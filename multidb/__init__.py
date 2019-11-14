@@ -115,14 +115,14 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
 
     def _get_slave(self, tenant_id='0', sub_domain=None):
         """Returns the alias of a slave database.
-            tenant_id = 0 for unit tests
+            tenant_id = 0 for unit tests and assuming 0 is not used in tenant values
             tenant id derived from sub_domain value will override tenant id param
         """
         if sub_domain is not None:
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
         # check if slaves has tenant specific values, if not return empty
         try:
-            if not slaves:
+            if not slaves or tenant_id == '0':
                 return tenant_id + ".default"
         except:
             return tenant_id + ".default"
@@ -134,11 +134,11 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
             slave_node = tenant_id + "." + DEFAULT_DB_ALIAS
         if (tenant_id + ".") in slave_node:
             if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
-                print("slave node found for tenant = " + str(slave_node))
+                print("slave node found for tenant: {}, provided slave node: {} ".format(tenant_id,slave_node))
             return slave_node
         else:
             if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
-                print("no slave node found for tenant, provided node name = " + str(slave_node))
+                print("No slave node found for tenant: {}, provided slave node: {} ".format(tenant_id,slave_node))
             return self.get_tenant_slave_node(next(slaves), tenant_id)
 
     def db_for_read(self, model, **hints):
