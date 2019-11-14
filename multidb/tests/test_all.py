@@ -7,7 +7,7 @@ from django.test.client import Client
 from django.test.utils import override_settings
 
 from multidb import (DEFAULT_DB_ALIAS, MasterSlaveRouter,
-                     PinningMasterSlaveRouter, get_slave)
+                     PinningMasterSlaveRouter)
 from multidb.conf import settings
 from multidb.middleware import PinningRouterMiddleware
 from multidb.pinning import (this_thread_is_pinned, pin_this_thread,
@@ -17,7 +17,7 @@ import threading
 thread_in_action = threading.current_thread().__dict__
 thread_in_action['subdomain'] = 'testserver'
 
-DEFAULT_DB_ALIAS = MasterSlaveRouter().resolve_multi_tenant_db('default','0')
+DEFAULT_DB_ALIAS = "default"
 
 def expire_cookies(cookies):
     cookie_names = cookies.keys()
@@ -36,7 +36,7 @@ class MasterSlaveRouterTests(TestCase):
     """Tests for MasterSlaveRouter"""
 
     def test_db_for_read(self):
-        self.assertEquals(MasterSlaveRouter().db_for_read(None), get_slave())
+        self.assertEquals(MasterSlaveRouter().db_for_read(None), MasterSlaveRouter().get_slave())
         # TODO: Test the round-robin functionality.
 
     def test_db_for_write(self):
@@ -48,7 +48,7 @@ class MasterSlaveRouterTests(TestCase):
         slaves"""
         router = MasterSlaveRouter()
         self.assertTrue(router.allow_syncdb(DEFAULT_DB_ALIAS, None))
-        self.assertFalse(router.allow_syncdb(get_slave(), None))
+        self.assertFalse(router.allow_syncdb(MasterSlaveRouter().get_slave(), None))
 
 
 class PinningTests(TestCase):
@@ -72,7 +72,7 @@ class PinningTests(TestCase):
         
         router = PinningMasterSlaveRouter()
 
-        self.assertEquals(router.db_for_read(None), get_slave())
+        self.assertEquals(router.db_for_read(None), MasterSlaveRouter().get_slave())
 
         pin_this_thread()
         self.assertEquals(router.db_for_read(None), DEFAULT_DB_ALIAS)
@@ -80,7 +80,7 @@ class PinningTests(TestCase):
     def test_db_write_decorator(self):
 
         def read_view(req):
-            self.assertEquals(router.db_for_read(None), get_slave())
+            self.assertEquals(router.db_for_read(None), MasterSlaveRouter().get_slave())
             return HttpResponse()
 
         @db_write
@@ -89,7 +89,7 @@ class PinningTests(TestCase):
             return HttpResponse()
 
         router = PinningMasterSlaveRouter()
-        self.assertEquals(router.db_for_read(None), get_slave())
+        self.assertEquals(router.db_for_read(None), MasterSlaveRouter().get_slave())
         write_view(HttpRequest())
         read_view(HttpRequest())
 

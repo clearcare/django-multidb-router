@@ -11,12 +11,96 @@ import threading
 
 DEFAULT_DB_ALIAS = 'default'
 
+db_router = getattr(settings, 'DATABASE_ROUTERS')
+if db_router:
+    if 'multidb.PinningMasterSlaveRouter' in db_router:
+        if getattr(settings, 'SLAVE_DATABASES'):
+            # Shuffle the list so the first slave db isn't slammed during startup.
+            dbs = list(settings.SLAVE_DATABASES)
+            random.shuffle(dbs)
+            slaves = itertools.cycle(dbs)
+            # Set the slaves as test mirrors of the master.
+            for db in dbs:
+                if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                    settings.DATABASES[db].get('TEST', {})['MIRROR'] = DEFAULT_DB_ALIAS
+                else:
+                    settings.DATABASES[db]['TEST_MIRROR'] = DEFAULT_DB_ALIAS
+        else:
+            slaves = itertools.repeat(DEFAULT_DB_ALIAS)
+    else:
+        # at the bottom of the file, code for multitenant pinning slave master slaves exists
+        pass
+    
+
 class MasterSlaveRouter(object):
+
+    def get_slave(self):
+        """Returns the alias of a slave database."""
+        return next(slaves)
+
+    def db_for_read(self, model, **hints):
+        """Send reads to slaves in round-robin."""
+        return self.get_slave()
+
+    def db_for_write(self, model, **hints):
+        """Send all writes to the master."""
+        return DEFAULT_DB_ALIAS
+
+    def allow_relation(self, obj1, obj2, **hints):
+        """Allow all relations, so FK validation stays quiet."""
+        return True
+
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
+        return db == DEFAULT_DB_ALIAS
+
+    def allow_syncdb(self, db, model):
+        """Only allow syncdb on the master."""
+        return db == DEFAULT_DB_ALIAS
+
+class PinningMasterSlaveRouter(MasterSlaveRouter):
+    """Router that sends reads to master if a certain flag is set. Writes
+    always go to master.
+    Typically, we set a cookie in middleware for certain request HTTP methods
+    and give it a max age that's certain to be longer than the replication lag.
+    The flag comes from that cookie.
+    
+    """
+    def db_for_read(self, model, **hints):
+        """Send reads to slaves in round-robin unless this thread is "stuck" to
+        the master."""
+        return DEFAULT_DB_ALIAS if this_thread_is_pinned() else self.get_slave()
+
+class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
+
+    def get_slave(self, tenant_id='0', sub_domain=None):
+        return self._get_slave(tenant_id, sub_domain)
+
+    def _get_slave(self, tenant_id='0', sub_domain=None):
+        """Returns the alias of a slave database.
+            tenant_id = 0 for unit tests
+            tenant id derived from sub_domain value will override tenant id param
+        """
+        if sub_domain is not None:
+            tenant_id = self.get_tenant_id(sub_domain=sub_domain)
+        resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
+        return resolved_slave_node
+
+    def get_tenant_slave_node(self, slave_node, tenant_id):
+        if slave_node == DEFAULT_DB_ALIAS:
+            slave_node = tenant_id + "." + DEFAULT_DB_ALIAS
+        if (tenant_id + ".") in slave_node:
+            if (settings.TENANT_LOG_MODE == "DEBUG"):
+                print("slave node found for tenant = " + str(slave_node))
+            return slave_node
+        else:
+            if (settings.TENANT_LOG_MODE == "DEBUG"):
+                print("no slave node found for tenant, provided node name = " + str(slave_node))
+            return self.get_tenant_slave_node(next(slaves), tenant_id)
 
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin."""
         # print("db for read " + model.__name__ if model is not None else "No Model")
-        resolved_db = get_slave(self.get_tenant_id())
+        resolved_db = self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read" , resolved_db)
         return resolved_db
 
@@ -55,14 +139,14 @@ class MasterSlaveRouter(object):
     def resolve_multi_tenant_db(self, db_name, tenant_id=None):
         try:
             db_id = self.get_tenant_id() if tenant_id is None else tenant_id
-            resolved_db = '{}-{}'.format(db_name, db_id)
+            resolved_db = '{}.{}'.format(db_id, db_name)
             # print('{}:{}'.format(subdomain, resolved_db))
             return resolved_db
         except:
             # print("no subdomain value set")
             return db_name
 
-class PinningMasterSlaveRouter(MasterSlaveRouter):
+class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
     """Router that sends reads to master if a certain flag is set. Writes
     always go to master.
     Typically, we set a cookie in middleware for certain request HTTP methods
@@ -74,9 +158,34 @@ class PinningMasterSlaveRouter(MasterSlaveRouter):
         """Send reads to slaves in round-robin unless this thread is "stuck" to
         the master."""
         # print("db for read override " + model.__name__ if model is not None else "No Model")
-        resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else get_slave(self.get_tenant_id())
+        resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
+
+db_router = getattr(settings, 'DATABASE_ROUTERS')
+if db_router:
+    if 'multidb.MultiTenantPinningMasterSlaveRouter' in db_router:
+        dbs = list(settings.SLAVE_DATABASES)
+        # Shuffle the list so the first slave db isn't slammed during startup.
+        random.shuffle(dbs)
+        slaves = itertools.cycle(dbs)
+        # Set the slaves as test mirrors of the master.
+        for db in dbs:
+            resolved_db_name = MultiTenantMasterSlaveRouter().resolve_multi_tenant_db(
+                                                        DEFAULT_DB_ALIAS, 
+                                                        parse_tenant_id_from_db_config(db))
+            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+            else:
+                settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
+        else:
+            slaves = itertools.repeat(DEFAULT_DB_ALIAS)
+        
+def parse_tenant_id_from_db_config(db_config_name):
+    try:
+        return db_config_name.split(".")[0]
+    except:
+        return None
 
 def get_tenant_config():
     import requests, json
@@ -120,30 +229,6 @@ def get_tenant_config():
         tenants[item['id']] = [x for x in (base_portals + agencies)]
     return tenants
 
-TENANT_CONFIG = get_tenant_config()
-print("router tenant config " + str(TENANT_CONFIG))
-# {
-#     # '0': ['bg-hisc','tenant-admin-0','tenant-hq-0','testserver'],
-#     # '1': ['metzler','tenant-admin-1','tenant-hq-1'],
-# }
-
-
-
-# if getattr(settings, 'SLAVE_DATABASES'):
-#     # Shuffle the list so the first slave db isn't slammed during startup.
-#     dbs = list(settings.SLAVE_DATABASES)
-#     random.shuffle(dbs)
-#     slaves = itertools.cycle(dbs)
-#     # Set the slaves as test mirrors of the master.
-#     for db in dbs:
-#         resolved_db_name= MasterSlaveRouter().resolve_multi_tenant_db(DEFAULT_DB_ALIAS)
-#         if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-#             settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-#         else:
-#             settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-# else:
-#     slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-
 def print_with_thread_details(event_name, db_name, hints=None):
     subdomain = '--'
     thread_id = '--'
@@ -171,52 +256,5 @@ def print_with_thread_details(event_name, db_name, hints=None):
         except Exception as e:
             print("hints exception: " + str(e))
 
-def get_tenant_slave_dbs():
-    dbs = []
-    if getattr(settings, 'SLAVE_DATABASES'):
-        dbs = list(settings.SLAVE_DATABASES)
-        # Shuffle the list so the first slave db isn't slammed during startup.
-        random.shuffle(dbs)
-        slaves = itertools.cycle(dbs)
-        # Set the slaves as test mirrors of the master.
-        for db in dbs:
-            resolved_db_name = MasterSlaveRouter().resolve_multi_tenant_db(
-                                                        DEFAULT_DB_ALIAS, 
-                                                        parse_tenant_id_from_db_config(db))
-            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-            else:
-                settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-    else:
-        slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-    return slaves
-
-def parse_tenant_id_from_db_config(db_config_name):
-    try:
-        return db_config_name.split("-")[1]
-    except:
-        return None
-
-def get_slave(tenant_id='0', sub_domain=None):
-    """Returns the alias of a slave database.
-        tenant_id = 0 for unit tests
-    """
-    if sub_domain is not None:
-        tenant_id = MasterSlaveRouter().get_tenant_id(sub_domain=sub_domain)
-    resolved_slave_node = get_tenant_slave_node(next(tenant_slaves), tenant_id)
-    return resolved_slave_node
-
-def get_tenant_slave_node(slave_node, tenant_id):
-    if slave_node == DEFAULT_DB_ALIAS:
-        slave_node = DEFAULT_DB_ALIAS + "-" + tenant_id
-    if ("-" + tenant_id) in slave_node:
-        if (settings.TENANT_LOG_MODE == "DEBUG"):
-            print("slave node found for tenant = " + str(slave_node))
-        return slave_node
-    else:
-        if (settings.TENANT_LOG_MODE == "DEBUG"):
-            print("no slave node found for tenant, provided node name = " + str(slave_node))
-        return get_tenant_slave_node(next(tenant_slaves), tenant_id)
-
-tenant_slaves = get_tenant_slave_dbs()
-
+TENANT_CONFIG = get_tenant_config()
+print("router tenant config " + str(TENANT_CONFIG))
