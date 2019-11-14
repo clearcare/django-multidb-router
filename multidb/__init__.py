@@ -65,9 +65,15 @@ if db_router:
             random.shuffle(tenant_databases_matching_dbs)
             slaves = itertools.cycle(tenant_databases_matching_dbs)
 
+def get_slave(sub_domain=None):
+    if 'multidb.PinningMasterSlaveRouter' in db_router:
+        MasterSlaveRouter().get_slave(sub_domain)
+    else:
+        MultiTenantMasterPinningSlaveRouter().get_slave(sub_domain=sub_domain)
+
 class MasterSlaveRouter(object):
 
-    def get_slave(self):
+    def get_slave(self, subdomain=None):
         """Returns the alias of a slave database."""
         return next(slaves)
 
@@ -200,10 +206,6 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
-
-
-
-
 
 def get_tenants():
     import requests, json
