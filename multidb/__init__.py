@@ -29,8 +29,36 @@ if db_router:
         else:
             slaves = itertools.repeat(DEFAULT_DB_ALIAS)
     else:
-        # at the bottom of the file, code for multitenant pinning slave master slaves exists
-        pass
+        IS_MULTI_TENANT = True
+        dbs = list(settings.SLAVE_DATABASES)
+        # Shuffle the list so the first slave db isn't slammed during startup.
+        random.shuffle(dbs)
+        slaves = itertools.cycle(dbs)
+        # Set the slaves as test mirrors of the master.
+        for db in dbs:
+            # the SLAVE_DATABASES is expected to be an array of tenant_id.db_key
+            # resolved_db_name = MultiTenantMasterSlaveRouter().resolve_multi_tenant_db(
+            #                                             DEFAULT_DB_ALIAS, 
+            #                                             parse_tenant_id_from_db_config(db))
+
+            # get me all db across tenant based on the db in loop
+            tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
+
+            # for each matched tenant db, set its correspoinding default value as mirror
+            for tenant_matched_db in tenant_databases_matching_dbs:
+                tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
+                if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
+                    settings.DATABASES[tenant_matched_db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+                else:
+                    settings.DATABASES[tenant_matched_db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+        else:
+            # get me all db across tenant based on the db in loop
+            tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
+
+            # for each matched tenant db, set its correspoinding default value as mirror
+            for tenant_matched_db in tenant_databases_matching_dbs:
+                tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
+                slaves = itertools.repeat(tenant_id+".default")
     
 
 class MasterSlaveRouter(object):
@@ -163,31 +191,13 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
 
-db_router = getattr(settings, 'DATABASE_ROUTERS')
-if db_router:
-    if 'multidb.MultiTenantMasterPinningSlaveRouter' in db_router:
-        IS_MULTI_TENANT = True
-        dbs = list(settings.SLAVE_DATABASES)
-        # Shuffle the list so the first slave db isn't slammed during startup.
-        random.shuffle(dbs)
-        slaves = itertools.cycle(dbs)
-        # Set the slaves as test mirrors of the master.
-        for db in dbs:
-            resolved_db_name = MultiTenantMasterSlaveRouter().resolve_multi_tenant_db(
-                                                        DEFAULT_DB_ALIAS, 
-                                                        parse_tenant_id_from_db_config(db))
-            if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-            else:
-                settings.DATABASES[db]['TEST_MIRROR'] = resolved_db_name #DEFAULT_DB_ALIAS
-        else:
-            slaves = itertools.repeat(DEFAULT_DB_ALIAS)
-        
 def parse_tenant_id_from_db_config(db_config_name):
     try:
         return db_config_name.split(".")[0]
     except:
         return None
+
+
 
 def get_tenant_config():
     import requests, json
