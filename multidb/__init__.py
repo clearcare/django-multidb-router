@@ -12,6 +12,7 @@ import threading
 DEFAULT_DB_ALIAS = 'default'
 
 db_router = getattr(settings, 'DATABASE_ROUTERS')
+IS_MULTI_TENANT=False
 if db_router:
     if 'multidb.PinningMasterSlaveRouter' in db_router:
         if getattr(settings, 'SLAVE_DATABASES'):
@@ -164,7 +165,8 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
 
 db_router = getattr(settings, 'DATABASE_ROUTERS')
 if db_router:
-    if 'multidb.MultiTenantPinningMasterSlaveRouter' in db_router:
+    if 'multidb.MultiTenantMasterPinningSlaveRouter' in db_router:
+        IS_MULTI_TENANT = True
         dbs = list(settings.SLAVE_DATABASES)
         # Shuffle the list so the first slave db isn't slammed during startup.
         random.shuffle(dbs)
@@ -228,6 +230,19 @@ def get_tenant_config():
         base_portals = [item['admin']['portal']['url'], item['hq']['portal']['url']]
         tenants[item['id']] = [x for x in (base_portals + agencies)]
     return tenants
+
+def get_env(name, default=None, prefix='CC_'):
+    import os
+    val = os.environ.get(prefix + name, default)
+    try:
+        return eval(val) # this is a potential security risk
+    except:
+        return val
+
+TENANT_SERVICE_API_KEY = get_env(name="TENANT_SERVICE_API_KEY",default="da2-yhem3pedtjfmnhrrjeam4fdxwa")
+TENANT_SERVICE_API_ENDPOINT = get_env(name="TENANT_SERVICE_API_ENDPOINT",default="https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql")
+TENANT_LOG_MODE = get_env(name="TENANT_LOG_MODE", default="DEBUG_ROUTER")
+TENANT_DB_CONFIGS = {}
 
 def print_with_thread_details(event_name, db_name, hints=None):
     subdomain = '--'
