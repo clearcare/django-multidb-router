@@ -296,10 +296,8 @@ def get_tenant_url_mappings():
 def get_tenant_db_configs():
     items = get_tenants()
     DATABASES = {}
-    print(items)
     for item in items:
         id = item['id']
-        print(item)
         tenant_db_config = {
             '{}.default'.format(id): item['web_write_elb_conf'],
             '{}.masterdb'.format(id): item['web_write_elb_conf'],
@@ -356,5 +354,5 @@ def print_with_thread_details(event_name, db_name, hints=None):
 
 TENANT_CONFIG = get_tenant_url_mappings()
 TENANT_DB = get_tenant_db_configs()
-print("router tenant url mappings " + str(TENANT_CONFIG))
-print("router db config " + str(TENANT_DB))
+# print("router tenant url mappings " + str(TENANT_CONFIG))
+# print("router db config " + str(TENANT_DB))
