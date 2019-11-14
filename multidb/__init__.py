@@ -123,11 +123,11 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         if slave_node == DEFAULT_DB_ALIAS:
             slave_node = tenant_id + "." + DEFAULT_DB_ALIAS
         if (tenant_id + ".") in slave_node:
-            if (settings.TENANT_LOG_MODE == "DEBUG"):
+            if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
                 print("slave node found for tenant = " + str(slave_node))
             return slave_node
         else:
-            if (settings.TENANT_LOG_MODE == "DEBUG"):
+            if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
                 print("no slave node found for tenant, provided node name = " + str(slave_node))
             return self.get_tenant_slave_node(next(slaves), tenant_id)
 
@@ -202,8 +202,8 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
 
 def get_tenant_config():
     import requests, json
-    api_key = settings.TENANT_SERVICE_API_KEY
-    api_endpoint = settings.TENANT_SERVICE_API_ENDPOINT
+    api_key = TENANT_SERVICE_API_KEY
+    api_endpoint = TENANT_SERVICE_API_ENDPOINT
     headers = {"x-api-key": api_key}
     query = """
     query {
