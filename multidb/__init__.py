@@ -34,6 +34,11 @@ if db_router:
         # Shuffle the list so the first slave db isn't slammed during startup.
         random.shuffle(dbs)
         slaves = itertools.cycle(dbs)
+        def parse_tenant_id_from_db_config(db_config_name):
+            try:
+                return db_config_name.split(".")[0]
+            except:
+                return None
         # Set the slaves as test mirrors of the master.
         for db in dbs:
             # the SLAVE_DATABASES is expected to be an array of tenant_id.db_key
@@ -43,7 +48,7 @@ if db_router:
 
             # get me all db across tenant based on the db in loop
             tenant_databases_matching_dbs = [x for x in settings.DATABASES if db in x]
-
+            
             # for each matched tenant db, set its correspoinding default value as mirror
             for tenant_matched_db in tenant_databases_matching_dbs:
                 tenant_id = parse_tenant_id_from_db_config(tenant_matched_db)
@@ -191,11 +196,7 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         print_with_thread_details("db for read override" , resolved_db, hints)
         return resolved_db
 
-def parse_tenant_id_from_db_config(db_config_name):
-    try:
-        return db_config_name.split(".")[0]
-    except:
-        return None
+
 
 
 
