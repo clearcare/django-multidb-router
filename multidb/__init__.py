@@ -31,13 +31,15 @@ if db_router:
             slaves = itertools.repeat(DEFAULT_DB_ALIAS)
     else:
         IS_MULTI_TENANT = True
+        print("========a===============")
         if getattr(settings, 'SLAVE_DATABASES'):
             dbs = list(settings.SLAVE_DATABASES)
-
+            print("========b===============")
             # lets resolve for tenancy per slave database mentioned
             # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
             resolved_dbs = []
             for db in dbs:
+                print("========c===============" + str(db))
                 tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "." in x and x.split(".")[1].lower()==db.lower() ]
                 #resolved_dbs.update(tenant_databases_matching_dbs)
 
@@ -177,7 +179,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         for k,v in TENANT_CONFIG.items():
             if subdomain in v:
                 db_id = str(k)
-        if (settings.TENANT_LOG_MODE == "DEBUG"):
+        if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER_TENANT_RESOLVE"):
             print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
         return db_id
 
@@ -327,7 +329,7 @@ def get_env(name, default=None, prefix='CC_'):
 
 TENANT_SERVICE_API_KEY = get_env(name="TENANT_SERVICE_API_KEY",default="da2-yhem3pedtjfmnhrrjeam4fdxwa")
 TENANT_SERVICE_API_ENDPOINT = get_env(name="TENANT_SERVICE_API_ENDPOINT",default="https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql")
-TENANT_LOG_MODE = get_env(name="TENANT_LOG_MODE", default="DEBUG_ROUTER")
+TENANT_LOG_MODE = get_env(name="TENANT_LOG_MODE", default="DEBUG_TURNED_OFF")
 TENANT_DB_CONFIGS = {}
 
 def print_with_thread_details(event_name, db_name, hints=None):
