@@ -202,7 +202,7 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
 
 
 
-def get_tenant_config():
+def get_tenants():
     import requests, json
     api_key = TENANT_SERVICE_API_KEY
     api_endpoint = TENANT_SERVICE_API_ENDPOINT
@@ -228,7 +228,47 @@ def get_tenant_config():
                         url
                     }
                 }
-            }
+            },
+            web_write_elb_conf {
+                    ENGINE
+                    NAME
+                    USER
+                    PASSWORD
+                    HOST
+                    PORT
+                },
+            web_read_elb_conf {
+                    ENGINE
+                    NAME
+                    USER
+                    PASSWORD
+                    HOST
+                    PORT
+                },
+            worker_read_elb_conf {
+                    ENGINE
+                    NAME
+                    USER
+                    PASSWORD
+                    HOST
+                    PORT
+                },
+            worker_write_elb_conf {
+                    ENGINE
+                    NAME
+                    USER
+                    PASSWORD
+                    HOST
+                    PORT
+                },
+            reporting_read_elb_conf {
+                    ENGINE
+                    NAME
+                    USER
+                    PASSWORD
+                    HOST
+                    PORT
+                }
         }
     }
     """
@@ -236,13 +276,43 @@ def get_tenant_config():
                             json={'query': query}, headers=headers)
 
     items = response.json()['data']['getTenants']
+    return items
+    # tenants = {}
+    # for item in items:
+    #     agencies = [x['portal']['url'] for x in item['franchisor']['agencies']]
+    #     base_portals = [item['admin']['portal']['url'], item['hq']['portal']['url']]
+    #     tenants[item['id']] = [x for x in (base_portals + agencies)]
+    # return tenants
 
+def get_tenant_url_mappings():
+    items = get_tenants()
     tenants = {}
     for item in items:
         agencies = [x['portal']['url'] for x in item['franchisor']['agencies']]
         base_portals = [item['admin']['portal']['url'], item['hq']['portal']['url']]
         tenants[item['id']] = [x for x in (base_portals + agencies)]
     return tenants
+
+def get_tenant_db_configs():
+    items = get_tenants()
+    DATABASES = {}
+    print(items)
+    for item in items:
+        id = item['id']
+        print(item)
+        tenant_db_config = {
+            '{}.default'.format(id): item['web_write_elb_conf'],
+            '{}.masterdb'.format(id): item['web_write_elb_conf'],
+            '{}.masterdb2'.format(id): item['web_write_elb_conf'],
+            '{}.workerslavedb1'.format(id): item['worker_read_elb_conf'],
+            '{}.slavedb1'.format(id): item['worker_read_elb_conf'],
+            '{}.slavedb2'.format(id): item['worker_read_elb_conf'],
+            '{}.slavedb3'.format(id): item['worker_read_elb_conf'],
+            '{}.slavedb4'.format(id): item['worker_read_elb_conf'],
+            '{}.api-slave-db1'.format(id): item['reporting_read_elb_conf']
+        }
+        DATABASES.update(tenant_db_config)
+    return DATABASES
 
 def get_env(name, default=None, prefix='CC_'):
     import os
@@ -284,5 +354,7 @@ def print_with_thread_details(event_name, db_name, hints=None):
         except Exception as e:
             print("hints exception: " + str(e))
 
-TENANT_CONFIG = get_tenant_config()
-print("router tenant config " + str(TENANT_CONFIG))
+TENANT_CONFIG = get_tenant_url_mappings()
+TENANT_DB = get_tenant_db_configs()
+print("router tenant url mappings " + str(TENANT_CONFIG))
+print("router db config " + str(TENANT_DB))
