@@ -174,7 +174,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         else:
             subdomain = sub_domain
         if TENANT_CONFIG is not None:
-            db_id = TENANT_CONFIG[subdomain].get('tenant_id', 0)
+            db_id = TENANT_CONFIG.get(subdomain, {}).get('tenant_id', 0)
 
         if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER_TENANT_RESOLVE"):
             print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
