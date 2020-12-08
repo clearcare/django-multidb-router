@@ -173,9 +173,9 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
             subdomain = current_thread.get('subdomain')
         else:
             subdomain = sub_domain
-        for k,v in TENANT_CONFIG.items():
-            if subdomain in v:
-                db_id = str(k)
+        if TENANT_CONFIG is not None:
+            db_id = TENANT_CONFIG[subdomain].get('tenant_id')
+
         if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER_TENANT_RESOLVE"):
             print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
         return db_id
@@ -298,23 +298,24 @@ def get_tenant_url_mappings():
     return tenants
 
 def get_tenant_db_configs():
-    items = get_tenants()
-    DATABASES = {}
-    for item in items:
-        id = item['id']
-        tenant_db_config = {
-            '{}.default'.format(id): item['web_write_elb_conf'],
-            '{}.masterdb'.format(id): item['web_write_elb_conf'],
-            '{}.masterdb2'.format(id): item['web_write_elb_conf'],
-            '{}.workerslavedb1'.format(id): item['worker_read_elb_conf'],
-            '{}.slavedb1'.format(id): item['worker_read_elb_conf'],
-            '{}.slavedb2'.format(id): item['worker_read_elb_conf'],
-            '{}.slavedb3'.format(id): item['worker_read_elb_conf'],
-            '{}.slavedb4'.format(id): item['worker_read_elb_conf'],
-            '{}.api-slave-db1'.format(id): item['reporting_read_elb_conf']
-        }
-        DATABASES.update(tenant_db_config)
-    return DATABASES
+    return settings.DATABASES
+    # items = get_tenants()
+    # DATABASES = {}
+    # for item in items:
+    #     id = item['id']
+    #     tenant_db_config = {
+    #         '{}.default'.format(id): item['web_write_elb_conf'],
+    #         '{}.masterdb'.format(id): item['web_write_elb_conf'],
+    #         '{}.masterdb2'.format(id): item['web_write_elb_conf'],
+    #         '{}.workerslavedb1'.format(id): item['worker_read_elb_conf'],
+    #         '{}.slavedb1'.format(id): item['worker_read_elb_conf'],
+    #         '{}.slavedb2'.format(id): item['worker_read_elb_conf'],
+    #         '{}.slavedb3'.format(id): item['worker_read_elb_conf'],
+    #         '{}.slavedb4'.format(id): item['worker_read_elb_conf'],
+    #         '{}.api-slave-db1'.format(id): item['reporting_read_elb_conf']
+    #     }
+    #     DATABASES.update(tenant_db_config)
+    # return DATABASES
 
 def get_env(name, default=None, prefix='CC_'):
     import os
@@ -330,8 +331,8 @@ if 'multidb.MultiTenantMasterPinningSlaveRouter' in db_router:
     TENANT_SERVICE_API_ENDPOINT = settings.TENANT_SERVICE_API_ENDPOINT #get_env(name="TENANT_SERVICE_API_ENDPOINT",default="https://ednpt77lq5bnndhvkzf4lfwkme.appsync-api.us-west-2.amazonaws.com/graphql")
     TENANT_LOG_MODE = settings.TENANT_LOG_MODE #get_env(name="TENANT_LOG_MODE", default="DEBUG_TURNED_OFF")
     TENANT_DB_CONFIGS = {}
-    TENANT_CONFIG = get_tenant_url_mappings()
-    TENANT_DB = get_tenant_db_configs()
+    TENANT_CONFIG = settings.TENANT_CONFIGS #get_tenant_url_mappings()
+    TENANT_DB = settings.TENANT_DB_CONFIGS #get_tenant_db_configs()
 
 def print_with_thread_details(event_name, db_name, hints=None):
     subdomain = '--'
