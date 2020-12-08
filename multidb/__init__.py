@@ -11,6 +11,9 @@ import threading
 
 DEFAULT_DB_ALIAS = 'default'
 
+def resolve_db_name(db, tenant_id):
+    return "{}-{}".format(db, tenant_id)
+
 db_router = getattr(settings, 'DATABASE_ROUTERS')
 IS_MULTI_TENANT=False
 if db_router:
@@ -47,7 +50,7 @@ if db_router:
             slaves = itertools.cycle(dbs)
             def parse_tenant_id_from_db_config(db_config_name):
                 try:
-                    return db_config_name.split(".")[0]
+                    return db_config_name.split("-")[1]
                 except:
                     return None
             # Set the slaves as test mirrors of the master.
@@ -55,9 +58,9 @@ if db_router:
                 # for each matched tenant db, set its correspoinding default value as mirror
                 tenant_id = parse_tenant_id_from_db_config(db)
                 if LooseVersion(django.get_version()) >= LooseVersion('1.7'):
-                    settings.DATABASES[db].get('TEST', {})['MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+                    settings.DATABASES[db].get('TEST', {})['MIRROR'] = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id) # tenant_id+".default" #DEFAULT_DB_ALIAS
                 else:
-                    settings.DATABASES[db]['TEST_MIRROR'] = tenant_id+".default" #DEFAULT_DB_ALIAS
+                    settings.DATABASES[db]['TEST_MIRROR'] = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id) #tenant_id+".default" #DEFAULT_DB_ALIAS
         else:
             # get me all default tenant db and add it to slaves node
             tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "." in x]
@@ -123,15 +126,15 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         # check if slaves has tenant specific values, if not return empty
         try:
             if not slaves or tenant_id == '0':
-                return tenant_id + ".default"
+                return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         except:
-            return tenant_id + ".default"
+            return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 
     def get_tenant_slave_node(self, slave_node, tenant_id):
         if slave_node == DEFAULT_DB_ALIAS:
-            slave_node = tenant_id + "." + DEFAULT_DB_ALIAS
+            slave_node = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         if (tenant_id + ".") in slave_node:
             if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
                 print("slave node found for tenant: {}, provided slave node: {} ".format(tenant_id,slave_node))
@@ -183,7 +186,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
     def resolve_multi_tenant_db(self, db_name, tenant_id=None):
         try:
             db_id = self.get_tenant_id() if tenant_id is None else tenant_id
-            resolved_db = '{}-{}'.format( db_name, db_id)
+            resolved_db = resolve_db_name(db_name, db_id)
             # print('{}:{}'.format(subdomain, resolved_db))
             return resolved_db
         except:
