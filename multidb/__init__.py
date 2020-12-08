@@ -12,6 +12,8 @@ import threading
 DEFAULT_DB_ALIAS = 'default'
 
 def resolve_db_name(db, tenant_id):
+    if "-" exists in db:
+        return db
     return "{}-{}".format(db, tenant_id)
 
 db_router = getattr(settings, 'DATABASE_ROUTERS')
@@ -185,6 +187,8 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
 
     def resolve_multi_tenant_db(self, db_name, tenant_id=None):
         try:
+            if "-" in db_name:
+                return db_name
             db_id = self.get_tenant_id() if tenant_id is None else tenant_id
             resolved_db = resolve_db_name(db_name, db_id)
             # print('{}:{}'.format(subdomain, resolved_db))
