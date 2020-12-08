@@ -12,7 +12,7 @@ import threading
 DEFAULT_DB_ALIAS = 'default'
 
 def resolve_db_name(db, tenant_id):
-    if "-" exists in db:
+    if "-" in db:
         return db
     return "{}-{}".format(db, tenant_id)
 
