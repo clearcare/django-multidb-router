@@ -211,6 +211,7 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         print("db for read override " + model.__name__ if model is not None else "No Model")
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
+        print("resolved: {}".format(resolved_db))
         return resolved_db
 
 def get_tenants():
