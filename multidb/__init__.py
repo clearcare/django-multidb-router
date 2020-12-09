@@ -137,7 +137,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
     def get_tenant_slave_node(self, slave_node, tenant_id):
         if slave_node == DEFAULT_DB_ALIAS:
             slave_node = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
-        if (tenant_id + ".") in slave_node:
+        if ("-" + tenant_id) in slave_node:
             if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
                 print("slave node found for tenant: {}, provided slave node: {} ".format(tenant_id,slave_node))
             return slave_node
@@ -211,6 +211,7 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         print("db for read override " + model.__name__ if model is not None else "No Model")
         print(self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS))
         print(this_thread_is_pinned())
+        print(self.get_tenant_id())
         print(self.get_slave(self.get_tenant_id()))
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
