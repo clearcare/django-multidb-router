@@ -23,7 +23,6 @@ if db_router:
         if getattr(settings, 'SLAVE_DATABASES'):
             # Shuffle the list so the first slave db isn't slammed during startup.
             dbs = list(settings.SLAVE_DATABASES)
-            print("resolved slave dbs across tenants = " + str(dbs))
             random.shuffle(dbs)
             slaves = itertools.cycle(dbs)
             # Set the slaves as test mirrors of the master.
@@ -132,8 +131,6 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
                 return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         except:
             return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
-        import pdb;pdb.set_trace()
-        print("resolving slave nodes: {}".format(next(slaves)))
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 
