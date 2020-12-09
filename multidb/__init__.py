@@ -66,6 +66,7 @@ if db_router:
         else:
             # get me all default tenant db and add it to slaves node
             tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "-" in x]
+            print("tenant_databases_matching_dbs: {}".format(str(tenant_databases_matching_dbs)))
             random.shuffle(tenant_databases_matching_dbs)
             slaves = itertools.cycle(tenant_databases_matching_dbs)
 
