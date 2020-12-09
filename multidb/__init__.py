@@ -131,7 +131,8 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
                 return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         except:
             return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
-        print("resolving slave nodes")
+        import pdb;pdb.set_trace()
+        print("resolving slave nodes: {}".format(next(slaves)))
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 
