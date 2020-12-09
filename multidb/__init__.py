@@ -127,14 +127,17 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
         # check if slaves has tenant specific values, if not return empty
         try:
+            print(str(len(slaves) if slaves is not None else '-1'))
             if not slaves or tenant_id == '0':
                 return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         except:
+            print("{}".format(resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)))
             return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 
     def get_tenant_slave_node(self, slave_node, tenant_id):
+        print("get_tenant_slave_node: {},{}".format(slave_node, tenant_id))
         if slave_node == DEFAULT_DB_ALIAS:
             slave_node = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         if ("-" + tenant_id) in slave_node:
@@ -148,7 +151,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
 
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin."""
-        print("db for read " + model.__name__ if model is not None else "No Model")
+        # print("db for read " + model.__name__ if model is not None else "No Model")
         resolved_db = self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read" , resolved_db)
         return resolved_db
@@ -208,14 +211,9 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
     def db_for_read(self, model, **hints):
         """Send reads to slaves in round-robin unless this thread is "stuck" to
         the master."""
-        print("db for read override " + model.__name__ if model is not None else "No Model")
-        print(self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS))
-        print(this_thread_is_pinned())
-        print(self.get_tenant_id())
-        print(self.get_slave(self.get_tenant_id()))
+        # print("db for read override " + model.__name__ if model is not None else "No Model")
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
-        print("resolved: {}".format(resolved_db))
         return resolved_db
 
 def get_tenants():
