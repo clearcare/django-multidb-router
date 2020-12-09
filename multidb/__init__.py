@@ -65,7 +65,7 @@ if db_router:
                     settings.DATABASES[db]['TEST_MIRROR'] = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id) #tenant_id+".default" #DEFAULT_DB_ALIAS
         else:
             # get me all default tenant db and add it to slaves node
-            tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "." in x]
+            tenant_databases_matching_dbs = [x for x in settings.DATABASES if 'default' in x and "-" in x]
             random.shuffle(tenant_databases_matching_dbs)
             slaves = itertools.cycle(tenant_databases_matching_dbs)
 
