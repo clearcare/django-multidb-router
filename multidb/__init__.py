@@ -209,6 +209,9 @@ class MultiTenantMasterPinningSlaveRouter(MultiTenantMasterSlaveRouter):
         """Send reads to slaves in round-robin unless this thread is "stuck" to
         the master."""
         print("db for read override " + model.__name__ if model is not None else "No Model")
+        print(self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS))
+        print(this_thread_is_pinned())
+        print(self.get_slave(self.get_tenant_id()))
         resolved_db = self.resolve_multi_tenant_db(DEFAULT_DB_ALIAS) if this_thread_is_pinned() else self.get_slave(self.get_tenant_id())
         print_with_thread_details("db for read override" , resolved_db, hints)
         print("resolved: {}".format(resolved_db))
