@@ -135,10 +135,9 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
         return resolved_slave_node
 
     def get_tenant_slave_node(self, slave_node, tenant_id):
-        print("get_tenant_slave_node: {},{}".format(slave_node, tenant_id))
         if slave_node == DEFAULT_DB_ALIAS:
             slave_node = resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
-        if ("-" + tenant_id) in slave_node:
+        if ("-" + str(tenant_id)) in slave_node:
             if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER"):
                 print("slave node found for tenant: {}, provided slave node: {} ".format(tenant_id,slave_node))
             return slave_node
@@ -184,7 +183,7 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
 
         if (settings.TENANT_LOG_MODE == "DEBUG_ROUTER_TENANT_RESOLVE"):
             print("tenant resolving -- subdomain={}::db_id={}".format(subdomain, db_id))
-        return db_id
+        return str(db_id)
 
     def resolve_multi_tenant_db(self, db_name, tenant_id=None):
         try:
