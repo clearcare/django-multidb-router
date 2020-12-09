@@ -127,12 +127,11 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
             tenant_id = self.get_tenant_id(sub_domain=sub_domain)
         # check if slaves has tenant specific values, if not return empty
         try:
-            print(str(len(slaves) if slaves is not None else '-1'))
             if not slaves or tenant_id == '0':
                 return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
         except:
-            print("{}".format(resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)))
             return resolve_db_name(DEFAULT_DB_ALIAS, tenant_id)
+        print("resolving slave nodes")
         resolved_slave_node = self.get_tenant_slave_node(next(slaves), tenant_id)
         return resolved_slave_node
 
@@ -345,15 +344,15 @@ if 'multidb.MultiTenantMasterPinningSlaveRouter' in db_router:
     TENANT_DB = settings.TENANT_DB_CONFIGS #get_tenant_db_configs()
 
 def print_with_thread_details(event_name, db_name, hints=None):
-    subdomain = '--'
-    thread_id = '--'
-    try:
-        current_thread = threading.current_thread().__dict__
-        subdomain = current_thread.get('subdomain')
-        thread_id = threading.current_thread().__name__
-    except:
-        pass
     if (settings.TENANT_LOG_MODE == "DEBUG"):
+        subdomain = '--'
+        thread_id = '--'
+        try:
+            current_thread = threading.current_thread().__dict__
+            subdomain = current_thread.get('subdomain')
+            thread_id = threading.current_thread().__name__
+        except:
+            pass
         print("event={}::thread={}::db={}::subdomain={}".format(
                                                         event_name,
                                                         thread_id, 
