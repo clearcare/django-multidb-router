@@ -38,10 +38,10 @@ if db_router:
         if getattr(settings, 'SLAVE_DATABASES'):
             dbs = list(settings.SLAVE_DATABASES)
             # lets resolve for tenancy per slave database mentioned
-            # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [tenant-1.slavedb1,tenant-1.slavedb2...]
+            # e.g: SLAVE_DATABASES=[slavedb1,slavedb2] should result in [slavedb-1,slavedb2-2...]
             resolved_dbs = []
             for db in dbs:
-                tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "." in x and x.split(".")[1].lower()==db.lower() ]
+                tenant_databases_matching_dbs = [resolved_dbs.append(x) for x in settings.DATABASES if "-" in x and x.split("-")[0].lower()==db.lower() ]
                 #resolved_dbs.update(tenant_databases_matching_dbs)
 
             dbs = resolved_dbs
