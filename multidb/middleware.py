@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from hashlib import md5
 
 from django.core.cache import get_cache
@@ -9,7 +10,7 @@ from .pinning import (pin_this_thread, unpin_this_thread,
                       unset_db_write_for_this_thread)
 
 import threading
-from __future__ import unicode_literals
+
 from contextlib import contextmanager
 from threading import local
 
