@@ -65,8 +65,7 @@ class PinningRouterMiddleware(object):
                     # current_thread.__dict__['subdomain'] = sub_domain
                     chipmunk.sub_domain = sub_domain
                 except Exception as e:
-                    if TENANT_LOG_MODE == "THREAD_DEBUG":
-                        print("error in router set domain : {}".format(str(e)))
+                    print("error in router set domain : {}".format(str(e)))
                     raise
 
             set_subdomain(subdomain)
