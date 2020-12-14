@@ -9,6 +9,9 @@ from .pinning import (pin_this_thread, unpin_this_thread,
                       unset_db_write_for_this_thread)
 
 import threading
+from __future__ import unicode_literals
+from contextlib import contextmanager
+from threading import local
 
 
 READ_ONLY_METHODS = frozenset(['GET', 'TRACE', 'HEAD', 'OPTIONS'])
@@ -112,9 +115,7 @@ class PinningRouterMiddleware(object):
 
         return response
 
-from __future__ import unicode_literals
-from contextlib import contextmanager
-from threading import local
+
 
 _thread_locals = local()
 
