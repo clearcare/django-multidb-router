@@ -64,7 +64,7 @@ class PinningRouterMiddleware(object):
                     from core import Chipmunk
                     # current_thread = threading.current_thread()
                     # current_thread.__dict__['subdomain'] = sub_domain
-                    chipmunk.sub_domain = sub_domain
+                    Chipmunk.sub_domain = sub_domain
                 except Exception as e:
                     print("error in router set domain : {}".format(str(e)))
                     raise
