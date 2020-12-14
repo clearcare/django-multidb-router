@@ -174,8 +174,9 @@ class MultiTenantMasterSlaveRouter(MasterSlaveRouter):
     def get_tenant_id(self, sub_domain=None):
         db_id = '0'
         if sub_domain is None:
-            current_thread = threading.current_thread().__dict__
-            subdomain = current_thread.get('subdomain')
+            # current_thread = threading.current_thread().__dict__
+            # subdomain = current_thread.get('subdomain')
+            subdomain = get_subdomain()
         else:
             subdomain = sub_domain
         if TENANT_CONFIG is not None:
@@ -332,6 +333,15 @@ def get_env(name, default=None, prefix='CC_'):
     except:
         return val
 
+def get_subdomain():
+    try:
+        # import threading
+        # current_thread = threading.current_thread()
+        # return current_thread.__dict__['subdomain']
+        from chipmunk import Chipmunk
+        return chipmunk.sub_domain
+    except:
+        return None
 
 if 'multidb.MultiTenantMasterPinningSlaveRouter' in db_router:
     TENANT_SERVICE_API_KEY = settings.TENANT_SERVICE_API_KEY #get_env(name="TENANT_SERVICE_API_KEY",default="da2-yhem3pedtjfmnhrrjeam4fdxwa")
@@ -346,9 +356,10 @@ def print_with_thread_details(event_name, db_name, hints=None):
         subdomain = '--'
         thread_id = '--'
         try:
-            current_thread = threading.current_thread().__dict__
-            subdomain = current_thread.get('subdomain')
-            thread_id = threading.current_thread().__name__
+            # current_thread = threading.current_thread().__dict__
+            # subdomain = current_thread.get('subdomain')
+            # thread_id = threading.current_thread().__name__
+            subdomain = get_subdomain()
         except:
             pass
         print("event={}::thread={}::db={}::subdomain={}".format(

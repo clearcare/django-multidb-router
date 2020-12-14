@@ -58,8 +58,16 @@ class PinningRouterMiddleware(object):
             request.subdomain = subdomain
             #print("subdomain :" + subdomain)
             
-            current_thread = threading.current_thread()
-            current_thread.__dict__['subdomain']=subdomain
+            def set_subdomain(sub_domain):
+                try:
+                    from chipmunk import Chipmunk
+                    # current_thread = threading.current_thread()
+                    # current_thread.__dict__['subdomain'] = sub_domain
+                    chipmunk.sub_domain = sub_domain
+                except:
+                    return None
+
+            set_subdomain(subdomain)
         except:
             print("no subdomain set")
         unset_db_write_for_this_thread()
