@@ -115,7 +115,5 @@ class PinningRouterMiddleware(object):
 
 
 
-_thread_locals = local()
-
 
 

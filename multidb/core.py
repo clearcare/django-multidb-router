@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 from contextlib import contextmanager
 from threading import local
 
+_thread_locals = local()
+
 class _Chipmunk(object):
     """
     This is a global storage utility class with a very silly name. It uses a thread local object for storage in order
