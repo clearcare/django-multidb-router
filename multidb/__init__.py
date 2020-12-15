@@ -338,8 +338,8 @@ def get_subdomain():
         # import threading
         # current_thread = threading.current_thread()
         # return current_thread.__dict__['subdomain']
-        from chipmunk import Chipmunk
-        return chipmunk.sub_domain
+        from core import Chipmunk
+        return Chipmunk.sub_domain
     except:
         return None
 
