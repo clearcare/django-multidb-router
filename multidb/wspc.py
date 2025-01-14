@@ -3,7 +3,7 @@ import threading
 from hashlib import md5
 from django.core.cache import caches
 from django.conf import settings
-from .pinning import pin_this_thread, unpin_this_thread, UseMaster
+from .pinning import pin_this_thread, unpin_this_thread, UsePrimaryDB
 from .middleware import PinningRouterMiddleware
 
 
@@ -137,7 +137,7 @@ class CCPinningRouterMiddleware(PinningRouterMiddleware):
         return response
 
 
-class UseSlave(UseMaster):
+class UseSlave(UsePrimaryDB):
     """A contextmanager/decorator to use the slave database."""
     "Use this in cases where the usual behavior would be to pin to master,"
     "such as when the request method is POST, but you know you're not doing any writing."
