@@ -59,7 +59,7 @@ class CCPinningRouterMiddleware(PinningRouterMiddleware):
                            'HTTP_USER_AGENT')
         idstring = '\n'.join([request.META.get(component, '')
                               for component in HASH_COMPONENTS])
-        return md5(idstring).hexdigest()
+        return md5(idstring.encode('utf-8')).hexdigest()
 
     def _pinned_because_of_prior_request(self, request):
         """Return True if a previous request has pinned us."""
