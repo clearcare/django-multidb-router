@@ -4,6 +4,7 @@ from hashlib import md5
 from django.core.cache import caches
 from django.conf import settings
 from .pinning import pin_this_thread, unpin_this_thread, UsePrimaryDB
+from .pinning import this_thread_is_pinned
 from .middleware import PinningRouterMiddleware
 
 
