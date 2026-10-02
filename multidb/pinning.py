@@ -7,7 +7,7 @@ import warnings
 
 
 __all__ = ['this_thread_is_pinned', 'pin_this_thread', 'unpin_this_thread',
-           'use_primary_db', 'use_master', 'db_write']
+           'reset_pin_state', 'use_primary_db', 'use_master', 'db_write']
 
 
 _locals = threading.local()
@@ -33,6 +33,32 @@ def unpin_this_thread():
     _locals.pinned = False
 
 
+def _pin_stack():
+    """Return this thread's stack of saved pin states, creating it on demand.
+
+    Each ``UsePrimaryDB.__enter__`` pushes the pin state it is about to
+    override; the matching ``__exit__`` pops and restores it. A per-thread
+    stack (rather than a single shared scalar) is what makes nested
+    ``use_primary_db``/``use_master`` blocks restore correctly.
+    """
+    stack = getattr(_locals, 'pin_stack', None)
+    if stack is None:
+        stack = _locals.pin_stack = []
+    return stack
+
+
+def reset_pin_state():
+    """Fully clear this thread's pin state: unpin and discard any saved stack.
+
+    Intended to be called at the start of a request so pin state cannot leak
+    between requests when threads/greenlets are reused (gunicorn gevent
+    workers). Also recovers from a half-open nesting stack left by code that
+    entered ``use_primary_db`` without a matching exit.
+    """
+    unpin_this_thread()
+    del _pin_stack()[:]
+
+
 class UsePrimaryDB(object):
     """A contextmanager/decorator to use the master database."""
     def __call__(self, func):
@@ -43,11 +69,20 @@ class UsePrimaryDB(object):
         return decorator
 
     def __enter__(self):
-        _locals.old = this_thread_is_pinned()
+        _pin_stack().append(this_thread_is_pinned())
         pin_this_thread()
 
     def __exit__(self, type, value, tb):
-        if not _locals.old:
+        stack = _pin_stack()
+        try:
+            was_pinned = stack.pop()
+        except IndexError:
+            # No matching __enter__ frame (e.g. stack was reset mid-block).
+            # Fall back to unpinning rather than leaving the thread pinned.
+            was_pinned = False
+        if was_pinned:
+            pin_this_thread()
+        else:
             unpin_this_thread()
 
 

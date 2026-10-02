@@ -26,8 +26,10 @@ from multidb.middleware import (
 from multidb.pinning import (
     db_write,
     pin_this_thread,
+    reset_pin_state,
     this_thread_is_pinned,
     unpin_this_thread,
+    use_master,
     use_primary_db,
 )
 
@@ -299,6 +301,117 @@ class UsePrimaryDBTests(TestCase):
         thread1_lock.release()
         thread1.join()
         self.assertEqual(pinned[1], False)
+
+
+class UsePrimaryDBNestingTests(UnpinningTestCase):
+    """Regression tests for nested ``use_primary_db``/``use_master`` blocks.
+
+    The old implementation saved the prior pin state into a single shared
+    scalar (``_locals.old``), so an inner block overwrote the outer block's
+    saved state and the outer ``__exit__`` restored the wrong value --
+    unpinning (or staying pinned) incorrectly and leaking pin state between
+    requests (WSPC-28308).
+    """
+
+    def tearDown(self):
+        reset_pin_state()
+        super(UsePrimaryDBNestingTests, self).tearDown()
+
+    def test_nested_from_unpinned_leaves_unpinned(self):
+        """The classic leak: nested blocks from an unpinned start must end
+        unpinned once both blocks exit."""
+        assert not this_thread_is_pinned()
+        with use_primary_db:
+            assert this_thread_is_pinned()
+            with use_primary_db:
+                assert this_thread_is_pinned()
+            # Inner exit must NOT unpin while the outer block is still active.
+            assert this_thread_is_pinned()
+        assert not this_thread_is_pinned()
+
+    def test_nested_from_pinned_stays_pinned(self):
+        pin_this_thread()
+        with use_primary_db:
+            with use_primary_db:
+                assert this_thread_is_pinned()
+            assert this_thread_is_pinned()
+        assert this_thread_is_pinned()
+
+    def test_deeply_nested_restores_each_level(self):
+        assert not this_thread_is_pinned()
+        with use_primary_db:
+            with use_primary_db:
+                with use_primary_db:
+                    assert this_thread_is_pinned()
+                assert this_thread_is_pinned()
+            assert this_thread_is_pinned()
+        assert not this_thread_is_pinned()
+
+    def test_mixed_use_master_and_use_primary_db(self):
+        """use_master and use_primary_db share the same stack and must nest."""
+        assert not this_thread_is_pinned()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            with use_master:
+                with use_primary_db:
+                    assert this_thread_is_pinned()
+                assert this_thread_is_pinned()
+        assert not this_thread_is_pinned()
+
+    def test_inner_exception_still_restores(self):
+        assert not this_thread_is_pinned()
+        with use_primary_db:
+            try:
+                with use_primary_db:
+                    raise ValueError
+            except ValueError:
+                pass
+            # Inner block unwound by the exception must not unpin the outer.
+            assert this_thread_is_pinned()
+        assert not this_thread_is_pinned()
+
+    def test_nested_decorators_restore(self):
+        @use_primary_db
+        def inner():
+            assert this_thread_is_pinned()
+
+        @use_primary_db
+        def outer():
+            assert this_thread_is_pinned()
+            inner()
+            assert this_thread_is_pinned()
+
+        assert not this_thread_is_pinned()
+        outer()
+        assert not this_thread_is_pinned()
+
+    def test_sequential_blocks_do_not_leak(self):
+        assert not this_thread_is_pinned()
+        with use_primary_db:
+            pass
+        assert not this_thread_is_pinned()
+        with use_primary_db:
+            pass
+        assert not this_thread_is_pinned()
+
+    def test_reset_pin_state_clears_pin_and_stack(self):
+        from multidb.pinning import _pin_stack
+
+        use_primary_db.__enter__()  # push a frame + pin, never exited
+        assert this_thread_is_pinned()
+        assert len(_pin_stack()) == 1
+
+        reset_pin_state()
+        assert not this_thread_is_pinned()
+        assert len(_pin_stack()) == 0
+
+    def test_block_after_half_open_reset_is_safe(self):
+        """A reset mid-nesting must not leave the next block pinned forever."""
+        use_primary_db.__enter__()  # half-open frame
+        reset_pin_state()
+        with use_primary_db:
+            assert this_thread_is_pinned()
+        assert not this_thread_is_pinned()
 
 
 class DeprecationTestCase(TestCase):

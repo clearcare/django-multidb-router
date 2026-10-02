@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+Unreleased
+----------
+
+- Fix pin-state leak across nested ``use_primary_db``/``use_master`` blocks.
+  ``__enter__``/``__exit__`` now use a per-thread stack instead of a single
+  shared ``_locals.old`` scalar, so inner blocks no longer clobber the state
+  an outer block must restore. (WSPC-28308)
+- Add ``reset_pin_state()`` to fully clear pin state (and any half-open
+  nesting stack) at the start of a request, preventing pin leaks between
+  requests when threads/greenlets are reused. (WSPC-28308)
+
 Version 0.10
 ------------
 
